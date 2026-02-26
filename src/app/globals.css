@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #1F2957;
+  --secondary: #D4DC53;
+  --accent: #003399;
+  --background: #F3F0EB;
+}
+
+body {
+  @apply bg-background text-primary antialiased;
+}
