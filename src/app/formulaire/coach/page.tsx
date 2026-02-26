@@ -46,7 +46,7 @@ export default function CoachForm() {
     nom: '', prenom: '', date_naissance: '', photo_url: '',
     // Page 2
     departements: [] as string[], specialites: [] as string[], autre_specialite: '', type_cours: [] as string[], 
-    diplome: '', diplome_statut: 'fourni', annees_experience: '', 
+    diplomes: [] as string[], diplome_statut: 'fourni', annees_experience: '', 
     prix_base: '', personnalite: '', description: '',
     // Page 3
     telephone: '', email: '', reseau_social: '', siret: '', rc_pro: false, connu_par: '', cgv_acceptees: false
@@ -140,7 +140,7 @@ export default function CoachForm() {
   // --------------------------------
 
   // Gestion des listes à choix multiples (Cases à cocher)
-  const handleArrayChange = (category: 'specialites' | 'type_cours', value: string) => {
+  const handleArrayChange = (category: 'specialites' | 'type_cours' | 'diplomes', value: string) => {
     setFormData(prev => {
       const currentList = prev[category];
       if (currentList.includes(value)) {
@@ -188,7 +188,7 @@ export default function CoachForm() {
       ville: formData.departements.join(', '), 
       specialites: finalSpecialites,
       type_cours: formData.type_cours,
-      diplome: formData.diplome,
+      diplome: formData.diplomes.length ? formData.diplomes.join(', ') : null,
       diplome_statut: formData.diplome_statut,
       annees_experience: formData.annees_experience,
       prix_base: isNaN(prixNumeric) ? null : prixNumeric,
@@ -375,38 +375,41 @@ export default function CoachForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="block text-sm font-bold text-[#1F2957]">Diplôme principal</label>
-                  <select name="diplome" value={formData.diplome} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none bg-white transition-all">
-                    <option value="">Sélectionner...</option>
-                    {DIPLOMES_LIST.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                  
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <label className="block text-xs font-bold text-gray-700 mb-2">Joindre le diplôme (PDF/Image)</label>
-                    <input type="file" disabled={formData.diplome_statut === 'a_fournir'} className="w-full text-xs text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#1F2957] file:text-white hover:file:bg-[#151c3d] cursor-pointer disabled:opacity-50 transition-opacity" />
-                  </div>
-
-                  <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
-                    <input type="checkbox" checked={formData.diplome_statut === 'a_fournir'} onChange={(e) => setFormData({...formData, diplome_statut: e.target.checked ? 'a_fournir' : 'fourni'})} className="rounded text-[#1F2957] focus:ring-[#D4DC53]" />
-                    <span>Je fournirai mon diplôme plus tard</span>
-                  </label>
+              <div className="space-y-3">
+                <label className="block text-sm font-bold text-[#1F2957]">Diplômes (plusieurs choix possibles)</label>
+                <div className="max-h-60 overflow-y-auto p-4 border border-gray-200 rounded-xl bg-gray-50 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {DIPLOMES_LIST.map(d => (
+                    <label key={d} className="flex items-center space-x-3 text-sm cursor-pointer">
+                      <input type="checkbox" checked={formData.diplomes.includes(d)} onChange={() => handleArrayChange('diplomes', d)} className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53]" />
+                      <span className="font-medium text-gray-700">{d}</span>
+                    </label>
+                  ))}
                 </div>
 
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <label className="block text-xs font-bold text-gray-700 mb-2">Joindre le diplôme (PDF/Image)</label>
+                  <input type="file" disabled={formData.diplome_statut === 'a_fournir'} className="w-full text-xs text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#1F2957] file:text-white hover:file:bg-[#151c3d] cursor-pointer disabled:opacity-50 transition-opacity" />
+                </div>
+
+                <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
+                  <input type="checkbox" checked={formData.diplome_statut === 'a_fournir'} onChange={(e) => setFormData({...formData, diplome_statut: e.target.checked ? 'a_fournir' : 'fourni'})} className="rounded text-[#1F2957] focus:ring-[#D4DC53]" />
+                  <span>Je fournirai mon diplôme plus tard</span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-[#1F2957] mb-2">Années d'expérience</label>
+                  <label className="block text-sm font-bold text-[#1F2957] mb-2">Années d&apos;expérience</label>
                   <select name="annees_experience" value={formData.annees_experience} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none bg-white transition-all">
                     <option value="">Sélectionner...</option>
                     {[...Array(10)].map((_, i) => <option key={i+1} value={i+1}>{i+1} an{i > 0 ? 's' : ''}</option>)}
                     <option value="10+">Plus de 10 ans</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Tarif de base indicatif (€/h)</label>
-                <input type="number" name="prix_base" placeholder="Ex: 50" value={formData.prix_base} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all md:w-1/2" />
+                <div>
+                  <label className="block text-sm font-bold text-[#1F2957] mb-2">Tarif de base indicatif (€/h)</label>
+                  <input type="number" name="prix_base" placeholder="Ex: 50" value={formData.prix_base} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" />
+                </div>
               </div>
 
               <div>
@@ -504,20 +507,20 @@ export default function CoachForm() {
               </div>
 
               <div className="mt-8 space-y-4">
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <label className="flex items-start space-x-3 cursor-pointer">
-                    <input required type="checkbox" name="rc_pro" checked={formData.rc_pro} onChange={handleChange} className="mt-1 w-5 h-5 rounded text-[#1F2957] focus:ring-[#D4DC53]" />
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 min-h-[5.5rem] flex items-center">
+                  <label className="flex items-start space-x-3 cursor-pointer w-full">
+                    <input required type="checkbox" name="rc_pro" checked={formData.rc_pro} onChange={handleChange} className="mt-1 w-5 h-5 rounded text-[#1F2957] focus:ring-[#D4DC53] flex-shrink-0" />
                     <span className="text-sm text-gray-700">
                       Je certifie posséder une Assurance Responsabilité Civile Professionnelle (RC Pro) valide.*
                     </span>
                   </label>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <label className="flex items-start space-x-3 cursor-pointer">
-                    <input required type="checkbox" name="cgv_acceptees" checked={formData.cgv_acceptees} onChange={handleChange} className="mt-1 w-5 h-5 rounded text-[#1F2957] focus:ring-[#D4DC53]" />
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 min-h-[5.5rem] flex items-center">
+                  <label className="flex items-start space-x-3 cursor-pointer w-full">
+                    <input required type="checkbox" name="cgv_acceptees" checked={formData.cgv_acceptees} onChange={handleChange} className="mt-1 w-5 h-5 rounded text-[#1F2957] focus:ring-[#D4DC53] flex-shrink-0" />
                     <span className="text-sm text-gray-700">
-                      J'accepte les conditions générales de vente, les conditions générales d'utilisation, et la politique de confidentialité concernant l'usage de mes données.*
+                      J&apos;accepte les conditions générales de vente, les conditions générales d&apos;utilisation, et la politique de confidentialité concernant l&apos;usage de mes données.*
                     </span>
                   </label>
                 </div>

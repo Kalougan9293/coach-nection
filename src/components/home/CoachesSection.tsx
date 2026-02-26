@@ -35,7 +35,7 @@ export default function CoachesSection({
             </div>
           ) : (
             (coachs as Coach[]).map((coach) => {
-              const name = [coach.prenom, coach.nom].filter(Boolean).join(" ") || "Coach";
+              const displayName = (coach.prenom as string)?.trim() || "Coach";
               const location = (coach.ville as string) ?? "—";
               const specs = (coach.specialites as string[] | undefined) ?? [];
               const imageUrl = (coach.photo_url as string) || PLACEHOLDER_IMAGE;
@@ -47,12 +47,12 @@ export default function CoachesSection({
                   <div className="aspect-square w-full overflow-hidden flex-shrink-0">
                     <img
                       src={imageUrl}
-                      alt={`Photo de ${name}`}
+                      alt={`Photo de ${displayName}`}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="p-5 flex flex-col flex-1 min-h-0">
-                    <h3 className="font-bold text-[#1F2957] text-xl mb-3 flex-shrink-0">{name}</h3>
+                    <h3 className="font-bold text-[#1F2957] text-xl mb-3 flex-shrink-0">{displayName}</h3>
                     <div className="flex flex-col flex-1 min-h-[7rem] gap-3">
                       <div className="flex flex-wrap gap-2 content-start max-h-[4rem] overflow-hidden">
                         {specs.slice(0, 8).map((spec, index) => (

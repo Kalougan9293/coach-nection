@@ -465,11 +465,11 @@ export default function RecruteurForm() {
                 </p>
               </div>
 
-              <div className="mt-8 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                <label className="flex items-start space-x-3 cursor-pointer">
-                  <input required type="checkbox" name="cgv_acceptees" checked={formData.cgv_acceptees} onChange={handleChange} className="mt-1 w-5 h-5 rounded text-[#1F2957] focus:ring-[#D4DC53]" />
+              <div className="mt-8 bg-gray-50 p-4 rounded-xl border border-gray-200 min-h-[5.5rem] flex items-center">
+                <label className="flex items-start space-x-3 cursor-pointer w-full">
+                  <input required type="checkbox" name="cgv_acceptees" checked={formData.cgv_acceptees} onChange={handleChange} className="mt-1 w-5 h-5 rounded text-[#1F2957] focus:ring-[#D4DC53] flex-shrink-0" />
                   <span className="text-sm text-gray-700">
-                    J'accepte les conditions générales de vente, les conditions générales d'utilisation, et la politique de confidentialité concernant l'usage de mes données.*
+                    J&apos;accepte les conditions générales de vente, les conditions générales d&apos;utilisation, et la politique de confidentialité concernant l&apos;usage de mes données.*
                   </span>
                 </label>
               </div>

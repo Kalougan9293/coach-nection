@@ -73,7 +73,7 @@ export default function AdminEditCoachPage() {
     specialites: [] as string[],
     autre_specialite: "",
     type_cours: [] as string[],
-    diplome: "",
+    diplomes: [] as string[],
     diplome_statut: "fourni",
     annees_experience: "",
     prix_base: "",
@@ -116,7 +116,7 @@ export default function AdminEditCoachPage() {
         specialites: specialitesSansAutres,
         autre_specialite,
         type_cours: c.type_cours ?? [],
-        diplome: c.diplome ?? "",
+        diplomes: (c.diplome ?? "").split(",").map((s) => s.trim()).filter(Boolean),
         diplome_statut: (c.diplome_statut as string) ?? "fourni",
         annees_experience: c.annees_experience ?? "",
         prix_base: c.prix_base != null ? String(c.prix_base) : "",
@@ -175,7 +175,7 @@ export default function AdminEditCoachPage() {
     setFormData((prev) => ({ ...prev, departements: prev.departements.filter((d) => d !== deptToRemove) }));
   };
 
-  const handleArrayChange = (category: "specialites" | "type_cours", value: string) => {
+  const handleArrayChange = (category: "specialites" | "type_cours" | "diplomes", value: string) => {
     setFormData((prev) => {
       const currentList = prev[category];
       if (currentList.includes(value)) {
@@ -209,7 +209,7 @@ export default function AdminEditCoachPage() {
       ville: formData.departements.join(", "),
       specialites: finalSpecialites,
       type_cours: formData.type_cours,
-      diplome: formData.diplome || null,
+      diplome: formData.diplomes.length ? formData.diplomes.join(", ") : null,
       diplome_statut: formData.diplome_statut || null,
       annees_experience: formData.annees_experience || null,
       prix_base: Number.isNaN(prixNumeric) ? null : prixNumeric,
@@ -427,33 +427,33 @@ export default function AdminEditCoachPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Diplôme</label>
-                <select
-                  name="diplome"
-                  value={formData.diplome}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-[#1F2957]/20 text-[#1F2957] bg-white"
-                >
-                  <option value="">Sélectionner...</option>
-                  {DIPLOMES_LIST.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
+            <div className="mt-4">
+              <label className="block text-sm font-bold text-[#1F2957] mb-2">Diplômes (plusieurs choix possibles)</label>
+              <div className="max-h-48 overflow-y-auto p-4 border border-[#1F2957]/20 rounded-xl bg-gray-50 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {DIPLOMES_LIST.map((d) => (
+                  <label key={d} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.diplomes.includes(d)}
+                      onChange={() => handleArrayChange("diplomes", d)}
+                      className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53]"
+                    />
+                    <span>{d}</span>
+                  </label>
+                ))}
               </div>
-              <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Statut diplôme</label>
-                <select
-                  name="diplome_statut"
-                  value={formData.diplome_statut}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-[#1F2957]/20 text-[#1F2957] bg-white"
-                >
-                  <option value="fourni">Fourni</option>
-                  <option value="a_fournir">À fournir</option>
-                </select>
-              </div>
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-bold text-[#1F2957] mb-2">Statut diplôme</label>
+              <select
+                name="diplome_statut"
+                value={formData.diplome_statut}
+                onChange={handleChange}
+                className="w-full md:max-w-xs px-4 py-3 rounded-xl border border-[#1F2957]/20 text-[#1F2957] bg-white"
+              >
+                <option value="fourni">Fourni</option>
+                <option value="a_fournir">À fournir</option>
+              </select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

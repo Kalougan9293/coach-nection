@@ -7,6 +7,11 @@ const nextConfig = {
         hostname: "images.unsplash.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "zmrgmjuxsjmakdsurqzp.supabase.co",
+        pathname: "/**",
+      },
     ],
   },
   // On ajoute cette partie pour forcer le déploiement malgré les apostrophes
