@@ -28,6 +28,14 @@ const DIPLOMES_LIST = [
 
 const JOURS_SEMAINE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
+/**
+ * Bucket Supabase Storage pour les photos coach.
+ * En production : dans le Dashboard Supabase > Storage, créer un bucket "coach-photos",
+ * le rendre Public (Public bucket), et autoriser les uploads (policy INSERT pour anon si besoin).
+ * L'URL des fichiers utilise NEXT_PUBLIC_SUPABASE_URL (aucune variable d'environnement supplémentaire).
+ */
+const STORAGE_BUCKET_COACH_PHOTOS = 'coach-photos';
+
 export default function CoachForm() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,6 +43,7 @@ export default function CoachForm() {
   const [error, setError] = useState<string | null>(null);
   const [age, setAge] = useState<number | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [deptInput, setDeptInput] = useState('');
 
   // Gestion des horaires dynamiques (disponibilités)
@@ -88,16 +97,18 @@ export default function CoachForm() {
     setFormData(prev => ({ ...prev, telephone: formatted }));
   };
 
-  // Gestion de l'aperçu photo
+  // Gestion de l'aperçu photo et du fichier pour l'upload
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     } else {
+      setPhotoFile(null);
       setPhotoPreview(null);
     }
   };
@@ -175,8 +186,37 @@ export default function CoachForm() {
     setIsSubmitting(true);
     setError(null);
 
+    let photoUrl: string | null = null;
+
+    // 1. Upload de la photo vers Supabase Storage AVANT l'insertion en base
+    if (photoFile) {
+      const ext = photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? ext : 'jpg';
+      const filePath = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${safeExt}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(STORAGE_BUCKET_COACH_PHOTOS)
+        .upload(filePath, photoFile, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: photoFile.type || `image/${safeExt}`,
+        });
+
+      if (uploadError) {
+        setError("L'envoi de la photo a échoué. Veuillez réessayer ou continuer sans photo.");
+        console.error('Storage upload error:', uploadError);
+        setIsSubmitting(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from(STORAGE_BUCKET_COACH_PHOTOS)
+        .getPublicUrl(uploadData.path);
+      photoUrl = urlData.publicUrl;
+    }
+
     const prixNumeric = parseFloat(formData.prix_base);
-    const finalSpecialites = formData.specialites.map(s => 
+    const finalSpecialites = formData.specialites.map(s =>
       s === 'Autres' && formData.autre_specialite ? `Autres : ${formData.autre_specialite}` : s
     );
 
@@ -184,8 +224,8 @@ export default function CoachForm() {
       nom: formData.nom,
       prenom: formData.prenom,
       date_naissance: formData.date_naissance,
-      photo_url: null,
-      ville: formData.departements.join(', '), 
+      photo_url: photoUrl,
+      ville: formData.departements.join(', '),
       specialites: finalSpecialites,
       type_cours: formData.type_cours,
       diplome: formData.diplomes.length ? formData.diplomes.join(', ') : null,
