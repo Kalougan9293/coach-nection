@@ -41,6 +41,7 @@ export default function CoachForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const [age, setAge] = useState<number | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -80,6 +81,7 @@ export default function CoachForm() {
   // Gestion des champs classiques
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    setInvalidFields(prev => { const n = new Set(prev); n.delete(name); return n; });
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
@@ -90,9 +92,9 @@ export default function CoachForm() {
 
   // Gestion du formatage du téléphone (06 12 34 56 78)
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvalidFields(prev => { const n = new Set(prev); n.delete('telephone'); return n; });
     let val = e.target.value.replace(/\D/g, ''); // Garde uniquement les chiffres
     if (val.length > 10) val = val.substring(0, 10); // 10 chiffres max
-    // Ajoute un espace tous les 2 chiffres
     const formatted = val.replace(/(\d{2})(?=\d)/g, '$1 ').trim();
     setFormData(prev => ({ ...prev, telephone: formatted }));
   };
@@ -113,24 +115,22 @@ export default function CoachForm() {
     }
   };
 
-  // --- Gestion des Départements ---
+  // --- Gestion des Départements (insertion auto à 2 chiffres) ---
   const handleDeptInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, ''); // Uniquement les chiffres
+    const val = e.target.value.replace(/\D/g, '');
     if (val.length <= 2) {
       setDeptInput(val);
-    }
-  };
-
-  const handleAddDept = (e?: React.MouseEvent | React.KeyboardEvent) => {
-    if (e) e.preventDefault(); // Empêche de valider tout le formulaire si on tape "Entrée"
-    if (!deptInput) return;
-
-    // Ajoute un '0' devant si le coach tape juste '1' au lieu de '01'
-    const formattedDept = deptInput.padStart(2, '0');
-    
-    if (DEPARTEMENTS_LIST.includes(formattedDept) && !formData.departements.includes(formattedDept)) {
-      setFormData(prev => ({ ...prev, departements: [...prev.departements, formattedDept] }));
-      setDeptInput(''); // Vide le champ après l'ajout
+      if (val.length === 2) {
+        const formattedDept = val.padStart(2, '0');
+        if (DEPARTEMENTS_LIST.includes(formattedDept)) {
+          setInvalidFields(prev => { const n = new Set(prev); n.delete('departements'); return n; });
+          setFormData(prev => {
+            if (prev.departements.includes(formattedDept)) return prev;
+            return { ...prev, departements: [...prev.departements, formattedDept] };
+          });
+          setDeptInput('');
+        }
+      }
     }
   };
 
@@ -322,17 +322,17 @@ export default function CoachForm() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('prenom') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
                   <label className="block text-sm font-bold text-[#1F2957] mb-2">Prénom *</label>
                   <input required type="text" name="prenom" value={formData.prenom} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" />
                 </div>
-                <div>
+                <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('nom') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
                   <label className="block text-sm font-bold text-[#1F2957] mb-2">Nom *</label>
                   <input required type="text" name="nom" value={formData.nom} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" />
                 </div>
               </div>
 
-              <div>
+              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('date_naissance') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
                 <label className="block text-sm font-bold text-[#1F2957] mb-2">Date de naissance *</label>
                 <div className="flex items-center gap-4">
                   <input required type="date" name="date_naissance" value={formData.date_naissance} onChange={handleChange} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" />
@@ -351,49 +351,61 @@ export default function CoachForm() {
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-2xl font-bold text-[#1F2957] border-b pb-2">2. Profil Professionnel</h2>
               
-              {/* Barre de recherche pour les départements */}
-              <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Zone d'intervention (Départements) *</label>
-                <div className="flex gap-2 mb-3">
-                  <input 
-                    type="text" 
-                    value={deptInput} 
-                    onChange={handleDeptInputChange}
-                    onKeyDown={(e) => e.key === 'Enter' ? handleAddDept(e) : null}
-                    placeholder="Tapez un numéro (ex: 75, 92...)" 
-                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" 
-                  />
-                  <button 
-                    type="button" 
-                    onClick={handleAddDept}
-                    className="px-6 py-3 bg-[#1F2957] text-white font-bold rounded-xl hover:bg-[#151c3d] transition-colors"
-                  >
-                    Ajouter
-                  </button>
-                </div>
-                {/* Affichage des badges départements */}
+              {/* Zone d'intervention : champ court + insertion auto à 2 chiffres */}
+              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('departements') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
+                <label className="block text-sm font-bold text-[#1F2957] mb-2">Zone d&apos;intervention (Départements) *</label>
+                <p className="text-xs text-gray-500 mb-2">Saisissez 2 chiffres (ex: 75) — le département s&apos;ajoute automatiquement.</p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={2}
+                  value={deptInput}
+                  onChange={handleDeptInputChange}
+                  placeholder="75"
+                  className="w-20 px-3 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all text-center text-lg"
+                />
                 {formData.departements.length > 0 && (
-                  <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {formData.departements.map(dep => (
-                      <span key={dep} className="flex items-center gap-2 px-3 py-1.5 bg-[#D4DC53] text-[#1F2957] text-sm font-bold rounded-full shadow-sm">
+                      <span key={dep} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#D4DC53] text-[#1F2957] text-sm font-bold rounded-full">
                         {dep}
-                        <button type="button" onClick={() => handleRemoveDept(dep)} className="hover:text-red-600 focus:outline-none transition-colors">
-                          ×
-                        </button>
+                        <button type="button" onClick={() => handleRemoveDept(dep)} className="hover:text-red-600 focus:outline-none leading-none" aria-label="Retirer">×</button>
                       </span>
                     ))}
                   </div>
                 )}
               </div>
 
+              {/* Spécialités : bulles cliquables, sélectionnées en dessous */}
               <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Vos Spécialités (Plusieurs choix possibles)</label>
-                <div className="max-h-60 overflow-y-auto p-4 border border-gray-200 rounded-xl bg-gray-50 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {SPECIALITES_LIST.map(spec => (
-                    <label key={spec} className="flex items-center space-x-3 text-sm cursor-pointer">
-                      <input type="checkbox" checked={formData.specialites.includes(spec)} onChange={() => handleArrayChange('specialites', spec)} className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53]" />
-                      <span className="font-medium text-gray-700">{spec}</span>
-                    </label>
+                <label className="block text-sm font-bold text-[#1F2957] mb-2">Vos Spécialités (cliquez pour ajouter / retirer)</label>
+                {formData.specialites.length > 0 && (
+                  <p className="text-xs text-[#1F2957]/70 mb-2">Sélectionnés :</p>
+                )}
+                {formData.specialites.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {formData.specialites.map(spec => (
+                      <button
+                        key={spec}
+                        type="button"
+                        onClick={() => handleArrayChange('specialites', spec)}
+                        className="px-3 py-1.5 bg-[#D4DC53] text-[#1F2957] text-sm font-medium rounded-full hover:bg-[#c4cc43] transition-colors"
+                      >
+                        {spec}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {SPECIALITES_LIST.filter(s => !formData.specialites.includes(s)).map(spec => (
+                    <button
+                      key={spec}
+                      type="button"
+                      onClick={() => handleArrayChange('specialites', spec)}
+                      className="px-3 py-1.5 border-2 border-gray-300 text-gray-700 text-sm font-medium rounded-full hover:border-[#1F2957] hover:bg-gray-50 transition-colors"
+                    >
+                      {spec}
+                    </button>
                   ))}
                 </div>
                 {formData.specialites.includes('Autres') && (
@@ -403,26 +415,70 @@ export default function CoachForm() {
                 )}
               </div>
 
+              {/* Types de cours : bulles cliquables */}
               <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Types de cours proposés</label>
-                <div className="max-h-60 overflow-y-auto p-4 border border-gray-200 rounded-xl bg-gray-50 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {TYPE_COURS_LIST.map(type => (
-                    <label key={type} className="flex items-center space-x-3 text-sm cursor-pointer">
-                      <input type="checkbox" checked={formData.type_cours.includes(type)} onChange={() => handleArrayChange('type_cours', type)} className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53]" />
-                      <span className="font-medium text-gray-700">{type}</span>
-                    </label>
+                <label className="block text-sm font-bold text-[#1F2957] mb-2">Types de cours proposés (cliquez pour ajouter / retirer)</label>
+                {formData.type_cours.length > 0 && (
+                  <p className="text-xs text-[#1F2957]/70 mb-2">Sélectionnés :</p>
+                )}
+                {formData.type_cours.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {formData.type_cours.map(type => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => handleArrayChange('type_cours', type)}
+                        className="px-3 py-1.5 bg-[#D4DC53] text-[#1F2957] text-sm font-medium rounded-full hover:bg-[#c4cc43] transition-colors"
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {TYPE_COURS_LIST.filter(t => !formData.type_cours.includes(t)).map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => handleArrayChange('type_cours', type)}
+                      className="px-3 py-1.5 border-2 border-gray-300 text-gray-700 text-sm font-medium rounded-full hover:border-[#1F2957] hover:bg-gray-50 transition-colors"
+                    >
+                      {type}
+                    </button>
                   ))}
                 </div>
               </div>
 
+              {/* Diplômes : bulles cliquables */}
               <div className="space-y-3">
-                <label className="block text-sm font-bold text-[#1F2957]">Diplômes (plusieurs choix possibles)</label>
-                <div className="max-h-60 overflow-y-auto p-4 border border-gray-200 rounded-xl bg-gray-50 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {DIPLOMES_LIST.map(d => (
-                    <label key={d} className="flex items-center space-x-3 text-sm cursor-pointer">
-                      <input type="checkbox" checked={formData.diplomes.includes(d)} onChange={() => handleArrayChange('diplomes', d)} className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53]" />
-                      <span className="font-medium text-gray-700">{d}</span>
-                    </label>
+                <label className="block text-sm font-bold text-[#1F2957]">Diplômes (cliquez pour ajouter / retirer)</label>
+                {formData.diplomes.length > 0 && (
+                  <p className="text-xs text-[#1F2957]/70 mb-2">Sélectionnés :</p>
+                )}
+                {formData.diplomes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {formData.diplomes.map(d => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => handleArrayChange('diplomes', d)}
+                        className="px-3 py-1.5 bg-[#D4DC53] text-[#1F2957] text-sm font-medium rounded-full hover:bg-[#c4cc43] transition-colors"
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {DIPLOMES_LIST.filter(d => !formData.diplomes.includes(d)).map(d => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => handleArrayChange('diplomes', d)}
+                      className="px-3 py-1.5 border-2 border-gray-300 text-gray-700 text-sm font-medium rounded-full hover:border-[#1F2957] hover:bg-gray-50 transition-colors"
+                    >
+                      {d}
+                    </button>
                   ))}
                 </div>
 
@@ -578,14 +634,23 @@ export default function CoachForm() {
 
             {step < 3 ? (
               <button type="button" onClick={() => {
-                if (step === 1 && (!formData.nom || !formData.prenom || !formData.date_naissance)) {
-                  setError("Veuillez remplir les champs obligatoires (*) avant de continuer.");
-                  return;
+                if (step === 1) {
+                  const missing: string[] = [];
+                  if (!formData.prenom) missing.push('prenom');
+                  if (!formData.nom) missing.push('nom');
+                  if (!formData.date_naissance) missing.push('date_naissance');
+                  if (missing.length > 0) {
+                    setInvalidFields(new Set(missing));
+                    setError("Veuillez remplir les champs obligatoires (*) avant de continuer.");
+                    return;
+                  }
                 }
                 if (step === 2 && formData.departements.length === 0) {
+                  setInvalidFields(new Set(['departements']));
                   setError("Veuillez sélectionner au moins un département d'intervention.");
                   return;
                 }
+                setInvalidFields(new Set());
                 setError(null);
                 nextStep();
               }} className="px-8 py-3 bg-[#1F2957] text-white font-bold rounded-xl hover:bg-[#151c3d] shadow-md transition-all">

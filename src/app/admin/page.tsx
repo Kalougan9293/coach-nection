@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+
+const COACHS_PER_PAGE = 20;
 
 type Tab = "coachs" | "annonces" | "stats" | "devis";
 
@@ -51,18 +53,24 @@ type DemandeRow = {
   [key: string]: unknown;
 };
 
+/** Liste des départements français pour le filtre (01-95) */
+const DEPARTEMENTS_OPTIONS = Array.from({ length: 95 }, (_, i) => (i + 1).toString().padStart(2, "0"));
+
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("coachs");
   const [coachs, setCoachs] = useState<CoachRow[]>([]);
   const [demandes, setDemandes] = useState<DemandeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterDept, setFilterDept] = useState<string>("");
+  const [coachPage, setCoachPage] = useState(1);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedCoachId, setExpandedCoachId] = useState<string | null>(null);
   const [expandedAnnonceId, setExpandedAnnonceId] = useState<string | null>(null);
   const [devis, setDevis] = useState<DevisRow[]>([]);
   const [devisLoading, setDevisLoading] = useState(false);
   const [devisForm, setDevisForm] = useState({ nom_client: "", montant: "", statut: "Proposition envoyée" });
+  const [annonceStatutFilter, setAnnonceStatutFilter] = useState<"en_cours" | "trouve">("en_cours");
 
   useEffect(() => {
     async function fetchInitial() {
@@ -127,15 +135,43 @@ export default function AdminPage() {
     };
   }, []);
 
-  const filteredCoachs = search.trim()
-    ? coachs.filter((c) => {
-        const q = search.toLowerCase();
+  const filteredCoachs = useMemo(() => {
+    let list = coachs;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((c) => {
         const nom = [c.prenom, c.nom].filter(Boolean).join(" ").toLowerCase();
         const ville = (c.ville ?? "").toLowerCase();
         const specs = (c.specialites ?? []).join(" ").toLowerCase();
         return nom.includes(q) || ville.includes(q) || specs.includes(q);
-      })
-    : coachs;
+      });
+    }
+    if (filterDept) {
+      list = list.filter((c) => {
+        const depts = (c.ville ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+        return depts.includes(filterDept);
+      });
+    }
+    return list;
+  }, [coachs, search, filterDept]);
+
+  const filteredDemandes = useMemo(
+    () =>
+      demandes.filter((d) =>
+        annonceStatutFilter === "trouve" ? d.statut === "trouve" : d.statut !== "trouve"
+      ),
+    [demandes, annonceStatutFilter]
+  );
+
+  const totalCoachPages = Math.max(1, Math.ceil(filteredCoachs.length / COACHS_PER_PAGE));
+  const paginatedCoachs = useMemo(
+    () => filteredCoachs.slice((coachPage - 1) * COACHS_PER_PAGE, coachPage * COACHS_PER_PAGE),
+    [filteredCoachs, coachPage]
+  );
+
+  useEffect(() => {
+    setCoachPage(1);
+  }, [search, filterDept]);
 
   const setStatut = async (id: string, statut: string) => {
     setUpdatingId(id);
@@ -267,28 +303,55 @@ export default function AdminPage() {
           <>
             {tab === "coachs" && (
               <div>
-                <div className="mb-6">
+                <div className="mb-6 flex flex-col sm:flex-row gap-4">
                   <input
                     type="search"
                     placeholder="Rechercher par nom, ville ou spécialité..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full max-w-md px-4 py-3 rounded-xl border border-[#1F2957]/20 bg-white text-[#1F2957] placeholder:text-[#1F2957]/50 focus:ring-2 focus:ring-[#D4DC53] focus:border-[#1F2957]/30 outline-none transition-all"
+                    className="flex-1 max-w-md px-4 py-3 rounded-xl border border-[#1F2957]/20 bg-white text-[#1F2957] placeholder:text-[#1F2957]/50 focus:ring-2 focus:ring-[#D4DC53] focus:border-[#1F2957]/30 outline-none transition-all"
                   />
+                  <select
+                    value={filterDept}
+                    onChange={(e) => setFilterDept(e.target.value)}
+                    className="px-4 py-3 rounded-xl border border-[#1F2957]/20 bg-white text-[#1F2957] focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all min-w-[12rem]"
+                  >
+                    <option value="">Tous les départements</option>
+                    {DEPARTEMENTS_OPTIONS.map((d) => (
+                      <option key={d} value={d}>
+                        Département {d}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
+                <p className="text-sm text-[#1F2957]/70 mb-4">
+                  {filteredCoachs.length} coach{filteredCoachs.length !== 1 ? "s" : ""} trouvé
+                  {filteredCoachs.length > COACHS_PER_PAGE
+                    ? ` • Page ${coachPage} sur ${totalCoachPages}`
+                    : ""}
+                </p>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredCoachs.map((c) => {
+                  {paginatedCoachs.map((c) => {
                     const isExpanded = expandedCoachId === c.id;
                     return (
                       <div
                         key={c.id}
                         className="bg-white rounded-2xl p-5 shadow-md border border-[#1F2957]/10 hover:shadow-lg transition-shadow"
                       >
-                        {/* Partie principale (toujours visible) */}
                         <div className="flex gap-4 mb-3">
                           <div className="flex-shrink-0 w-14 h-14 rounded-full overflow-hidden bg-gray-200">
                             {c.photo_url ? (
-                              <img src={c.photo_url} alt="" className="w-full h-full object-cover" />
+                              <img
+                                src={c.photo_url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                decoding="async"
+                                width={56}
+                                height={56}
+                              />
                             ) : (
                               <div className="w-full h-full bg-gray-300 rounded-full" />
                             )}
@@ -314,7 +377,6 @@ export default function AdminPage() {
                           {isExpanded ? "Voir moins ↑" : "Voir plus ↓"}
                         </button>
 
-                        {/* Partie détaillée (visible au clic) */}
                         {isExpanded && (
                           <div className="mt-4 pt-4 border-t border-[#1F2957]/10 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
                             <p><span className="font-medium text-[#1F2957]">Nom complet :</span> {[c.prenom, c.nom].filter(Boolean).join(" ") || "—"}</p>
@@ -354,6 +416,31 @@ export default function AdminPage() {
                     );
                   })}
                 </div>
+
+                {filteredCoachs.length > COACHS_PER_PAGE && (
+                  <div className="mt-8 flex items-center justify-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setCoachPage((p) => Math.max(1, p - 1))}
+                      disabled={coachPage <= 1}
+                      className="px-5 py-2.5 rounded-xl bg-[#1F2957] text-white font-medium hover:bg-[#151c3d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      ← Précédent
+                    </button>
+                    <span className="text-sm text-[#1F2957] font-medium">
+                      Page {coachPage} / {totalCoachPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCoachPage((p) => Math.min(totalCoachPages, p + 1))}
+                      disabled={coachPage >= totalCoachPages}
+                      className="px-5 py-2.5 rounded-xl bg-[#1F2957] text-white font-medium hover:bg-[#151c3d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Suivant →
+                    </button>
+                  </div>
+                )}
+
                 {filteredCoachs.length === 0 && (
                   <p className="text-center text-[#1F2957]/60 py-12">Aucun coach trouvé.</p>
                 )}
@@ -361,8 +448,33 @@ export default function AdminPage() {
             )}
 
             {tab === "annonces" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {demandes.map((d) => {
+              <div>
+                <div className="flex gap-2 mb-6 border-b border-[#1F2957]/10 pb-2">
+                  <button
+                    type="button"
+                    onClick={() => setAnnonceStatutFilter("en_cours")}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      annonceStatutFilter === "en_cours"
+                        ? "bg-amber-500 text-white"
+                        : "bg-white/60 text-[#1F2957] hover:bg-white border border-[#1F2957]/20"
+                    }`}
+                  >
+                    ⏳ En cours
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAnnonceStatutFilter("trouve")}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      annonceStatutFilter === "trouve"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white/60 text-[#1F2957] hover:bg-white border border-[#1F2957]/20"
+                    }`}
+                  >
+                    ✅ Trouvé !
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredDemandes.map((d) => {
                   const isExpanded = expandedAnnonceId === d.id;
                   const dx = d as DemandeRow & {
                     type_contrat?: string | null;
@@ -384,7 +496,6 @@ export default function AdminPage() {
                       key={d.id}
                       className="bg-white rounded-2xl p-5 shadow-md border border-[#1F2957]/10 hover:shadow-lg transition-shadow flex flex-col"
                     >
-                      {/* Partie principale (toujours visible) */}
                       <div className="mb-2">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <h3 className="font-bold text-[#1F2957] text-lg flex-1">
@@ -414,71 +525,83 @@ export default function AdminPage() {
                         </p>
                       </div>
                       <button
-                            type="button"
-                            onClick={() => setExpandedAnnonceId(isExpanded ? null : d.id)}
+                        type="button"
+                        onClick={() => setExpandedAnnonceId(isExpanded ? null : d.id)}
                         className="text-sm font-medium text-[#1F2957] hover:text-[#D4DC53] transition-colors mb-3"
                       >
                         {isExpanded ? "Voir moins ↑" : "Voir plus ↓"}
                       </button>
 
-                      {/* Partie détaillée (visible au clic) */}
                       {isExpanded && (
-                            <div className="mb-4 pt-4 border-t border-[#1F2957]/10 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                              <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Spécialités :</span> {formatSpecs(d.specialites)}</p>
-                              <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Types de cours :</span> {formatTypeCours(dx.type_cours)}</p>
-                              <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Horaires :</span> {formatHorairesDemande(d)}</p>
-                              <p><span className="font-medium text-[#1F2957]">Type de contrat :</span> {dx.type_contrat ?? "—"}</p>
-                              <p><span className="font-medium text-[#1F2957]">Diplôme requis :</span> {dx.diplome_requis ?? "—"}</p>
-                              <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Description :</span> {dx.description ?? "—"}</p>
-                              <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Profil recherché :</span> {dx.profil_recherche ?? "—"}</p>
-                              <p><span className="font-medium text-[#1F2957]">SIRET :</span> {dx.siret ?? "—"}</p>
-                              <p><span className="font-medium text-[#1F2957]">Tarif proposé :</span> {dx.tarif_propose != null ? `${dx.tarif_propose} €` : "—"}</p>
-                              <p><span className="font-medium text-[#1F2957]">Type demandeur :</span> {dx.type_demandeur ?? "—"}</p>
-                              <p><span className="font-medium text-[#1F2957]">Connu par :</span> {dx.connu_par ?? "—"}</p>
-                              <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Contact email :</span> <span className="break-all">{d.contact_email ?? "—"}</span></p>
-                              <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Contact téléphone :</span> {d.contact_telephone ?? "—"}</p>
-                              <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Réseau social :</span> <span className="break-all">{dx.contact_reseau ?? "—"}</span></p>
+                        <div className="mb-4 pt-4 border-t border-[#1F2957]/10 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                          <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Spécialités :</span> {formatSpecs(d.specialites)}</p>
+                          <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Types de cours :</span> {formatTypeCours(dx.type_cours)}</p>
+                          <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Horaires :</span> {formatHorairesDemande(d)}</p>
+                          <p><span className="font-medium text-[#1F2957]">Type de contrat :</span> {dx.type_contrat ?? "—"}</p>
+                          <p><span className="font-medium text-[#1F2957]">Diplôme requis :</span> {dx.diplome_requis ?? "—"}</p>
+                          <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Description :</span> {dx.description ?? "—"}</p>
+                          <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Profil recherché :</span> {dx.profil_recherche ?? "—"}</p>
+                          <p><span className="font-medium text-[#1F2957]">SIRET :</span> {dx.siret ?? "—"}</p>
+                          <p><span className="font-medium text-[#1F2957]">Tarif proposé :</span> {dx.tarif_propose != null ? `${dx.tarif_propose} €` : "—"}</p>
+                          <p><span className="font-medium text-[#1F2957]">Type demandeur :</span> {dx.type_demandeur ?? "—"}</p>
+                          <p><span className="font-medium text-[#1F2957]">Connu par :</span> {dx.connu_par ?? "—"}</p>
+                          <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Contact email :</span> <span className="break-all">{d.contact_email ?? "—"}</span></p>
+                          <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Contact téléphone :</span> {d.contact_telephone ?? "—"}</p>
+                          <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Réseau social :</span> <span className="break-all">{dx.contact_reseau ?? "—"}</span></p>
                         </div>
                       )}
 
-                      <div className="mt-auto flex flex-wrap gap-2">
-                        <button
-                          onClick={() => setStatut(d.id, "en_cours")}
-                          disabled={updatingId === d.id}
-                          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 ${
-                            d.statut === "en_cours"
-                              ? "bg-orange-500 text-white font-bold"
-                              : "bg-white text-orange-500 opacity-60"
-                          }`}
-                        >
-                          ⏳ En cours
-                        </button>
-                        <button
-                          onClick={() => setStatut(d.id, "trouve")}
-                          disabled={updatingId === d.id}
-                          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 ${
-                            d.statut === "trouve"
-                              ? "bg-green-500 text-white font-bold"
-                              : "bg-white text-green-500 opacity-60"
-                          }`}
-                        >
-                          ✅ Trouvé !
-                        </button>
-                        <button
-                          onClick={() => deleteAnnonce(d.id)}
-                          disabled={updatingId === d.id}
-                          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50 transition-colors"
-                        >
-                          🗑️ Supprimer l&apos;annonce
-                        </button>
+                      <div className="mt-auto flex flex-col gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setStatut(d.id, "en_cours")}
+                            disabled={updatingId === d.id}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 ${
+                              d.statut === "en_cours"
+                                ? "bg-orange-500 text-white font-bold"
+                                : "bg-white text-orange-500 opacity-60"
+                            }`}
+                          >
+                            ⏳ En cours
+                          </button>
+                          <button
+                            onClick={() => setStatut(d.id, "trouve")}
+                            disabled={updatingId === d.id}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 ${
+                              d.statut === "trouve"
+                                ? "bg-green-500 text-white font-bold"
+                                : "bg-white text-green-500 opacity-60"
+                            }`}
+                          >
+                            ✅ Trouvé !
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={`/admin/annonces/${d.id}`}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#1F2957]/10 text-[#1F2957] hover:bg-[#1F2957]/20 transition-colors"
+                          >
+                            ✏️ Modifier
+                          </Link>
+                          <button
+                            onClick={() => deleteAnnonce(d.id)}
+                            disabled={updatingId === d.id}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50 transition-colors"
+                          >
+                            🗑️ Supprimer
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
-                {demandes.length === 0 && (
-                  <p className="text-center text-[#1F2957]/60 py-12 col-span-full">Aucune annonce.</p>
+                {filteredDemandes.length === 0 && (
+                  <p className="text-center text-[#1F2957]/60 py-12 col-span-full">
+                    {annonceStatutFilter === "trouve" ? "Aucune annonce trouvée." : "Aucune annonce en cours."}
+                  </p>
                 )}
               </div>
+            </div>
             )}
 
             {tab === "stats" && (() => {

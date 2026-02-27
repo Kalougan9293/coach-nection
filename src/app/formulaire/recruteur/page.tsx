@@ -30,6 +30,7 @@ export default function RecruteurForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
 
   // Gestion des horaires dynamiques
   const [horairesADefinir, setHorairesADefinir] = useState(true);
@@ -42,8 +43,8 @@ export default function RecruteurForm() {
 
   const [formData, setFormData] = useState({
     // Page 1
-    titre_annonce: '', type_demandeur: '', ville: '', specialites: [] as string[], 
-    autre_specialite: '', type_cours: [] as string[], diplome_requis: '', 
+    titre_annonce: '', type_demandeur: '', ville: '', specialite_recherchee: '', 
+    autre_specialite: '', type_cours: '', diplome_requis: '', 
     type_contrat: '', tarif_propose: '', description: '', profil_recherche: '',
     // Page 2
     budget_recherche: 0, nom_contact: '', contact_email: '', contact_telephone: '', 
@@ -52,6 +53,7 @@ export default function RecruteurForm() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    setInvalidFields(prev => { const n = new Set(prev); n.delete(name); return n; });
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
@@ -66,17 +68,6 @@ export default function RecruteurForm() {
     if (val.length > 10) val = val.substring(0, 10);
     const formatted = val.replace(/(\d{2})(?=\d)/g, '$1 ').trim();
     setFormData(prev => ({ ...prev, contact_telephone: formatted }));
-  };
-
-  const handleArrayChange = (category: 'specialites' | 'type_cours', value: string) => {
-    setFormData(prev => {
-      const currentList = prev[category];
-      if (currentList.includes(value)) {
-        return { ...prev, [category]: currentList.filter(item => item !== value) };
-      } else {
-        return { ...prev, [category]: [...currentList, value] };
-      }
-    });
   };
 
   const addHoraire = () => setHorairesList([...horairesList, { jour: 'Lundi', debut: '09:00', fin: '10:00' }]);
@@ -138,15 +129,18 @@ export default function RecruteurForm() {
     setError(null);
 
     const tarifNumeric = parseFloat(formData.tarif_propose);
-    const finalSpecialites = formData.specialites.map(s => 
-      s === 'Autres' && formData.autre_specialite ? `Autres : ${formData.autre_specialite}` : s
-    );
+    const finalSpecialites = formData.specialite_recherchee
+      ? (formData.specialite_recherchee === 'Autres' && formData.autre_specialite
+          ? [`Autres : ${formData.autre_specialite}`]
+          : [formData.specialite_recherchee])
+      : [];
 
     const finalPayload = {
       type_demandeur: formData.type_demandeur,
       ville: formData.ville,
       specialites: finalSpecialites,
-      type_cours: formData.type_cours,
+      type_cours: formData.type_cours ? [formData.type_cours] : [],
+      statut: "en_cours",
       horaires_a_definir: horairesADefinir,
       horaires_details: horairesADefinir ? null : horairesList,
       diplome_requis: formData.diplome_requis || null,
@@ -226,7 +220,7 @@ export default function RecruteurForm() {
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-2xl font-bold text-[#1F2957] border-b pb-2">1. La demande</h2>
               
-              <div>
+              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('type_demandeur') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
                 <label className="block text-sm font-bold text-[#1F2957] mb-3">Vous êtes : *</label>
                 <div className="flex gap-4">
                   <label className="flex items-center space-x-2 cursor-pointer">
@@ -240,44 +234,52 @@ export default function RecruteurForm() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Titre de l'annonce * (Max 50 car.)</label>
+              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('titre_annonce') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
+                <label className="block text-sm font-bold text-[#1F2957] mb-2">Titre de l&apos;annonce * (Max 50 car.)</label>
                 <input required type="text" name="titre_annonce" placeholder="Ex: Cherche coach Yoga pour cours en entreprise..." value={formData.titre_annonce} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" />
                 <div className="text-right text-xs text-gray-400 mt-1">{formData.titre_annonce.length}/50</div>
               </div>
 
-              <div>
+              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('ville') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
                 <label className="block text-sm font-bold text-[#1F2957] mb-2">Lieu (Ville / Quartier) *</label>
                 <input required type="text" name="ville" placeholder="Ex: Paris 15e, Lyon..." value={formData.ville} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" />
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Spécialité(s) recherchée(s) *</label>
-                <div className="max-h-48 overflow-y-auto p-4 border border-gray-200 rounded-xl bg-gray-50 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('specialite_recherchee') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
+                <label className="block text-sm font-bold text-[#1F2957] mb-2">Spécialité recherchée *</label>
+                <select
+                  required
+                  name="specialite_recherchee"
+                  value={formData.specialite_recherchee}
+                  onChange={(e) => { setInvalidFields(prev => { const n = new Set(prev); n.delete('specialite_recherchee'); return n; }); setFormData(prev => ({ ...prev, specialite_recherchee: e.target.value })); }}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none bg-white transition-all"
+                >
+                  <option value="">Sélectionnez une spécialité</option>
                   {SPECIALITES_LIST.map(spec => (
-                    <label key={spec} className="flex items-center space-x-3 text-sm cursor-pointer">
-                      <input type="checkbox" checked={formData.specialites.includes(spec)} onChange={() => handleArrayChange('specialites', spec)} className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53]" />
-                      <span className="font-medium text-gray-700">{spec}</span>
-                    </label>
+                    <option key={spec} value={spec}>{spec}</option>
                   ))}
-                </div>
-                {formData.specialites.includes('Autres') && (
+                </select>
+                {formData.specialite_recherchee === 'Autres' && (
                   <div className="mt-3 animate-fade-in">
                     <input type="text" name="autre_specialite" placeholder="Précisez la spécialité..." value={formData.autre_specialite} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" />
                   </div>
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Types de cours *</label>
-                <div className="max-h-48 overflow-y-auto p-4 border border-gray-200 rounded-xl bg-gray-50 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('type_cours') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
+                <label className="block text-sm font-bold text-[#1F2957] mb-2">Type de cours *</label>
+                <select
+                  required
+                  name="type_cours"
+                  value={formData.type_cours}
+                  onChange={(e) => { setInvalidFields(prev => { const n = new Set(prev); n.delete('type_cours'); return n; }); setFormData(prev => ({ ...prev, type_cours: e.target.value })); }}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none bg-white transition-all"
+                >
+                  <option value="">Sélectionnez un type de cours</option>
                   {TYPE_COURS_LIST.map(type => (
-                    <label key={type} className="flex items-center space-x-3 text-sm cursor-pointer">
-                      <input type="checkbox" checked={formData.type_cours.includes(type)} onChange={() => handleArrayChange('type_cours', type)} className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53]" />
-                      <span className="font-medium text-gray-700">{type}</span>
-                    </label>
+                    <option key={type} value={type}>{type}</option>
                   ))}
-                </div>
+                </select>
               </div>
 
               {/* SECTION HORAIRES */}
@@ -321,7 +323,7 @@ export default function RecruteurForm() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
+                <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('type_contrat') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
                   <label className="block text-sm font-bold text-[#1F2957] mb-2">Type de contrat *</label>
                   <select required name="type_contrat" value={formData.type_contrat} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none bg-white">
                     <option value="">Sélectionner...</option>
@@ -346,8 +348,8 @@ export default function RecruteurForm() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-[#1F2957] mb-2">Description complète de l'annonce *</label>
+              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('description') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
+                <label className="block text-sm font-bold text-[#1F2957] mb-2">Description complète de l&apos;annonce *</label>
                 <textarea required name="description" rows={5} placeholder="Décrivez votre besoin en détail (matériel à disposition, nombre de participants, objectifs...)" value={formData.description} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" />
               </div>
 
@@ -485,14 +487,22 @@ export default function RecruteurForm() {
 
             {step === 1 ? (
               <button type="button" onClick={() => {
-                if (!formData.type_demandeur || !formData.titre_annonce || !formData.ville || !formData.type_contrat || !formData.description) {
-                  setError("Veuillez remplir tous les champs obligatoires (*) avant de continuer.");
+                const missing: string[] = [];
+                if (!formData.type_demandeur) missing.push('type_demandeur');
+                if (!formData.titre_annonce) missing.push('titre_annonce');
+                if (!formData.ville) missing.push('ville');
+                if (!formData.type_contrat) missing.push('type_contrat');
+                if (!formData.description) missing.push('description');
+                if (!formData.specialite_recherchee) missing.push('specialite_recherchee');
+                if (!formData.type_cours) missing.push('type_cours');
+                if (missing.length > 0) {
+                  setInvalidFields(new Set(missing));
+                  setError(missing.includes('specialite_recherchee') || missing.includes('type_cours')
+                    ? "Veuillez sélectionner une spécialité recherchée et un type de cours."
+                    : "Veuillez remplir tous les champs obligatoires (*) avant de continuer.");
                   return;
                 }
-                if (formData.specialites.length === 0 || formData.type_cours.length === 0) {
-                  setError("Veuillez sélectionner au moins une spécialité et un type de cours.");
-                  return;
-                }
+                setInvalidFields(new Set());
                 setError(null);
                 nextStep();
               }} className="px-8 py-3 bg-[#1F2957] text-white font-bold rounded-xl hover:bg-[#151c3d] shadow-md transition-all">
