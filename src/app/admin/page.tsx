@@ -57,6 +57,18 @@ type DemandeRow = {
 /** Liste des départements français pour le filtre (01-95) */
 const DEPARTEMENTS_OPTIONS = Array.from({ length: 95 }, (_, i) => (i + 1).toString().padStart(2, "0"));
 
+/** Statuts des devis (onglet Admin > Devis) */
+const DEVIS_STATUTS = [
+  "En attente",
+  "En cours",
+  "Proposition envoyé",
+  "Accompte",
+  "En essai",
+  "Valider",
+  "Facture envoyé",
+  "Payé",
+] as const;
+
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("coachs");
   const [coachs, setCoachs] = useState<CoachRow[]>([]);
@@ -70,7 +82,7 @@ export default function AdminPage() {
   const [expandedAnnonceId, setExpandedAnnonceId] = useState<string | null>(null);
   const [devis, setDevis] = useState<DevisRow[]>([]);
   const [devisLoading, setDevisLoading] = useState(false);
-  const [devisForm, setDevisForm] = useState({ nom_client: "", montant: "", coach: "", statut: "Proposition envoyée" });
+  const [devisForm, setDevisForm] = useState({ nom_client: "", montant: "", coach: "", statut: "En attente" });
   const [annonceStatutFilter, setAnnonceStatutFilter] = useState<"en_cours" | "trouve">("en_cours");
 
   useEffect(() => {
@@ -691,7 +703,7 @@ export default function AdminPage() {
                       if (!devisForm.nom_client.trim() || Number.isNaN(montantNum)) return;
                       setDevisLoading(true);
                       await supabase.from("suivi_devis").insert([{ nom_client: devisForm.nom_client.trim(), montant: montantNum, coach: devisForm.coach.trim() || null, statut: devisForm.statut }]);
-                      setDevisForm({ nom_client: "", montant: "", coach: "", statut: "Proposition envoyée" });
+                      setDevisForm({ nom_client: "", montant: "", coach: "", statut: "En attente" });
                       const { data } = await supabase.from("suivi_devis").select("*").order("created_at", { ascending: false });
                       if (data) setDevis(data as DevisRow[]);
                       setDevisLoading(false);
@@ -712,9 +724,9 @@ export default function AdminPage() {
                     <div>
                       <label className="block text-sm font-medium text-[#1F2957] mb-1">Statut</label>
                       <select value={devisForm.statut} onChange={(e) => setDevisForm((f) => ({ ...f, statut: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[#1F2957]/20 text-[#1F2957] bg-white">
-                        <option value="Proposition envoyée">Proposition envoyée</option>
-                        <option value="Accepté">Accepté</option>
-                        <option value="Payé">Payé</option>
+                        {DEVIS_STATUTS.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
                       </select>
                     </div>
                     <button type="submit" disabled={devisLoading} className="px-4 py-2 rounded-lg bg-[#1F2957] text-white font-medium hover:bg-[#151c3d] disabled:opacity-50">Ajouter</button>
@@ -754,9 +766,9 @@ export default function AdminPage() {
                                 disabled={updatingId === dv.id}
                                 className="px-2 py-1 rounded border border-[#1F2957]/20 bg-white text-[#1F2957] disabled:opacity-50"
                               >
-                                <option value="Proposition envoyée">Proposition envoyée</option>
-                                <option value="Accepté">Accepté</option>
-                                <option value="Payé">Payé</option>
+                                {DEVIS_STATUTS.map((s) => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
                               </select>
                             </td>
                             <td className="px-4 py-3 text-right">
