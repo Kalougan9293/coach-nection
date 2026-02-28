@@ -19,7 +19,7 @@ export default function ConfidentialitePage() {
         </Link>
 
         <h1 className="text-3xl font-bold text-[#1F2957] mb-2">Politique de Confidentialité</h1>
-        <p className="text-sm text-[#1F2957]/70 mb-8">Mise à jour : 15 mai 2025</p>
+        <p className="text-sm text-[#1F2957]/70 mb-8">Mise à jour : 28.02.2026</p>
 
         <p className="mb-10">
           Chez Coach-Nection, nous prenons la protection de vos données au sérieux. Cette politique
@@ -80,7 +80,7 @@ export default function ConfidentialitePage() {
           <p>
             Les données sont partagées uniquement avec des prestataires fiables et conformes au RGPD,
             strictement nécessaires au fonctionnement technique du site : Stripe (paiement), Supabase
-            (hébergement de la base de données), Vercel (hébergement du site web). Certains
+            (hébergement de la base de données), Netlify (hébergement du site web). Certains
             prestataires peuvent avoir des serveurs hors UE, mais respectent les clauses contractuelles
             types exigées par la réglementation européenne.
           </p>
@@ -130,13 +130,14 @@ export default function ConfidentialitePage() {
         <section className="mb-10">
           <h2 className="text-xl font-bold text-[#1F2957] mb-4">8. Utilisation des Cookies</h2>
           <p className="mb-4">
-            Nous utilisons des cookies pour assurer le bon fonctionnement technique du site et mesurer
-            l&apos;audience de manière anonyme.
+            Ce site utilise uniquement des cookies techniques strictement nécessaires à son bon
+            fonctionnement et à sa sécurité (notamment pour le maintien de la connexion des
+            utilisateurs via Supabase).
           </p>
           <p className="mb-4">
-            Une bannière s&apos;affichera lors de votre première visite vous permettant d&apos;accepter,
-            de refuser ou de personnaliser ces cookies. Vous pouvez également configurer votre
-            navigateur pour bloquer l&apos;installation des cookies tiers.
+            Aucun cookie de traçage publicitaire ou de mesure d&apos;audience n&apos;est utilisé. Par
+            conséquent, conformément aux directives de la CNIL, ce site est exempté du recueil de
+            consentement et ne nécessite pas l&apos;affichage d&apos;une bannière de cookies.
           </p>
           <p>
             Pour plus d&apos;informations sur la gestion des cookies, vous pouvez consulter le site

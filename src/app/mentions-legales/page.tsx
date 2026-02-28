@@ -19,7 +19,7 @@ export default function MentionsLegalesPage() {
         </Link>
 
         <h1 className="text-3xl font-bold text-[#1F2957] mb-2">Mentions légales</h1>
-        <p className="text-sm text-[#1F2957]/70 mb-8">Mise à jour le 15 mai 2025</p>
+        <p className="text-sm text-[#1F2957]/70 mb-8">Mise à jour : 28.02.2026</p>
 
         <p className="mb-6">
           Conformément aux dispositions des articles 6-III et 19 de la loi n°2004-575 du 21 juin 2004
@@ -51,13 +51,12 @@ export default function MentionsLegalesPage() {
         <section className="mb-10">
           <h2 className="text-xl font-bold text-[#1F2957] mb-4">2. Hébergeur du site</h2>
           <p className="mb-2">Le site Coach-Nection est hébergé par :</p>
-          <p className="mb-2">IONOS SARL</p>
-          <p className="mb-2">Adresse : 7 place de la Gare, 57200 Sarreguemines, France</p>
-          <p className="mb-2">Téléphone : 09 70 80 89 11 (appel non surtaxé)</p>
+          <p className="mb-2">Netlify, Inc.</p>
+          <p className="mb-2">Adresse : 44 Montgomery Street, Suite 300, San Francisco, California 94104, USA</p>
           <p>
-            Site :{" "}
-            <a href="https://www.ionos.fr" target="_blank" rel="noopener noreferrer" className={linkClass}>
-              https://www.ionos.fr
+            Site web :{" "}
+            <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer" className={linkClass}>
+              https://www.netlify.com
             </a>
           </p>
         </section>

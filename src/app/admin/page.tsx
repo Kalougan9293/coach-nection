@@ -12,6 +12,7 @@ type DevisRow = {
   id: string;
   nom_client: string | null;
   montant: number | null;
+  coach: string | null;
   statut: string | null;
   created_at?: string;
 };
@@ -69,7 +70,7 @@ export default function AdminPage() {
   const [expandedAnnonceId, setExpandedAnnonceId] = useState<string | null>(null);
   const [devis, setDevis] = useState<DevisRow[]>([]);
   const [devisLoading, setDevisLoading] = useState(false);
-  const [devisForm, setDevisForm] = useState({ nom_client: "", montant: "", statut: "Proposition envoyée" });
+  const [devisForm, setDevisForm] = useState({ nom_client: "", montant: "", coach: "", statut: "Proposition envoyée" });
   const [annonceStatutFilter, setAnnonceStatutFilter] = useState<"en_cours" | "trouve">("en_cours");
 
   useEffect(() => {
@@ -683,14 +684,14 @@ export default function AdminPage() {
                 <div className="bg-white rounded-xl p-5 shadow-md border border-[#1F2957]/10">
                   <h3 className="font-bold text-[#1F2957] mb-4">Ajouter un devis</h3>
                   <form
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end"
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_auto_1fr_1fr_auto] gap-4 items-end"
                     onSubmit={async (e) => {
                       e.preventDefault();
                       const montantNum = parseFloat(devisForm.montant);
                       if (!devisForm.nom_client.trim() || Number.isNaN(montantNum)) return;
                       setDevisLoading(true);
-                      await supabase.from("suivi_devis").insert([{ nom_client: devisForm.nom_client.trim(), montant: montantNum, statut: devisForm.statut }]);
-                      setDevisForm({ nom_client: "", montant: "", statut: "Proposition envoyée" });
+                      await supabase.from("suivi_devis").insert([{ nom_client: devisForm.nom_client.trim(), montant: montantNum, coach: devisForm.coach.trim() || null, statut: devisForm.statut }]);
+                      setDevisForm({ nom_client: "", montant: "", coach: "", statut: "Proposition envoyée" });
                       const { data } = await supabase.from("suivi_devis").select("*").order("created_at", { ascending: false });
                       if (data) setDevis(data as DevisRow[]);
                       setDevisLoading(false);
@@ -700,9 +701,13 @@ export default function AdminPage() {
                       <label className="block text-sm font-medium text-[#1F2957] mb-1">Nom du client</label>
                       <input type="text" value={devisForm.nom_client} onChange={(e) => setDevisForm((f) => ({ ...f, nom_client: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[#1F2957]/20 text-[#1F2957]" placeholder="Nom du client" required />
                     </div>
-                    <div>
+                    <div className="w-24">
                       <label className="block text-sm font-medium text-[#1F2957] mb-1">Montant (€)</label>
-                      <input type="number" step="0.01" min="0" value={devisForm.montant} onChange={(e) => setDevisForm((f) => ({ ...f, montant: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[#1F2957]/20 text-[#1F2957]" placeholder="Montant" required />
+                      <input type="number" step="0.01" min="0" value={devisForm.montant} onChange={(e) => setDevisForm((f) => ({ ...f, montant: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[#1F2957]/20 text-[#1F2957]" placeholder="0" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#1F2957] mb-1">Coach</label>
+                      <input type="text" value={devisForm.coach} onChange={(e) => setDevisForm((f) => ({ ...f, coach: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[#1F2957]/20 text-[#1F2957]" placeholder="Coach" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[#1F2957] mb-1">Statut</label>
@@ -722,18 +727,20 @@ export default function AdminPage() {
                         <tr>
                           <th className="text-left px-4 py-3 font-bold">Client</th>
                           <th className="text-left px-4 py-3 font-bold">Montant</th>
+                          <th className="text-left px-4 py-3 font-bold">Coach</th>
                           <th className="text-left px-4 py-3 font-bold">Statut</th>
                           <th className="text-right px-4 py-3 font-bold">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {devis.length === 0 && (
-                          <tr><td colSpan={4} className="px-4 py-8 text-center text-[#1F2957]/60">Aucun devis.</td></tr>
+                          <tr><td colSpan={5} className="px-4 py-8 text-center text-[#1F2957]/60">Aucun devis.</td></tr>
                         )}
                         {devis.map((dv) => (
                           <tr key={dv.id} className="border-t border-[#1F2957]/10 hover:bg-[#1F2957]/5">
                             <td className="px-4 py-3">{dv.nom_client ?? "—"}</td>
                             <td className="px-4 py-3">{dv.montant != null ? `${dv.montant} €` : "—"}</td>
+                            <td className="px-4 py-3">{dv.coach ?? "—"}</td>
                             <td className="px-4 py-3">
                               <select
                                 value={dv.statut ?? ""}

@@ -21,7 +21,7 @@ export default function CGVPage() {
         <h1 className="text-3xl font-bold text-[#1F2957] mb-2">
           Conditions Générales de Vente (CGV)
         </h1>
-        <p className="text-sm text-[#1F2957]/70 mb-8">Mise à jour le 15 mai 2025</p>
+        <p className="text-sm text-[#1F2957]/70 mb-8">Mise à jour : 28.02.2026</p>
 
         <section className="mb-10">
           <h2 className="text-xl font-bold text-[#1F2957] mb-4">1. Qui sommes-nous ?</h2>

@@ -18,9 +18,10 @@ export default function CGUPage() {
           ← Retour à l&apos;accueil
         </Link>
 
-        <h1 className="text-3xl font-bold text-[#1F2957] mb-8">
+        <h1 className="text-3xl font-bold text-[#1F2957] mb-2">
           Conditions Générales d&apos;Utilisation (CGU)
         </h1>
+        <p className="text-sm text-[#1F2957]/70 mb-8">Mise à jour : 28.02.2026</p>
 
         <section className="mb-10">
           <h2 className="text-xl font-bold text-[#1F2957] mb-4">1. Acceptation des CGU</h2>
