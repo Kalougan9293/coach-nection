@@ -1,5 +1,5 @@
 export default function HeroSection() {
-  const youtubeEmbedUrl = "https://www.youtube.com/embed/XuK60tTje70?rel=0";
+  const vimeoEmbedUrl = "https://player.vimeo.com/video/1087999976";
 
   return (
     <section className="relative py-4 md:py-6 overflow-hidden">
@@ -28,11 +28,11 @@ export default function HeroSection() {
         {/* Vidéo : même largeur max que le bloc stats */}
         <div className="w-full rounded-2xl overflow-hidden shadow-soft min-w-0">
           <iframe
-            src={youtubeEmbedUrl}
+            src={vimeoEmbedUrl}
             title="Vidéo Coach-Nection"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="fullscreen; picture-in-picture"
             allowFullScreen
-            className="w-full aspect-video block"
+            className="w-full aspect-video block min-h-0"
           />
         </div>
       </div>
