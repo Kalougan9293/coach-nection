@@ -7,7 +7,7 @@ export default function HeroSection() {
 
       <div className="mx-auto max-w-4xl w-full px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
         {/* Titre et sous-titre centrés */}
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-primary mb-2 tracking-tight w-full">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-primary mb-2 tracking-tight w-full">
           Besoin d&apos;un coach ?
         </h1>
         <p className="text-xl md:text-2xl font-medium text-primary mb-1 w-full">
