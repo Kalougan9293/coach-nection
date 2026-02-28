@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import FAQFooterLink from "./FAQFooterLink";
 
 export default function Footer() {
   return (
@@ -55,6 +56,7 @@ export default function Footer() {
         </div>
 
         <div className="flex gap-4 text-gray-400">
+          <FAQFooterLink />
           <Link href="/cgu" className="hover:text-white transition-colors">
             CGU
           </Link>
