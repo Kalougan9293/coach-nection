@@ -42,30 +42,30 @@ export default function CoachesSection({
               return (
                 <div
                   key={coach.id ?? String(Math.random())}
-                  className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-gray-100 flex flex-col h-full"
+                  className="group bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 flex flex-col h-full transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-xl"
                 >
                   <div className="aspect-square w-full overflow-hidden flex-shrink-0">
                     <img
                       src={imageUrl}
                       alt={`Photo de ${displayName}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
                     />
                   </div>
                   <div className="p-5 flex flex-col flex-1 min-h-0">
-                    <h3 className="font-bold text-[#1F2957] text-xl mb-3 flex-shrink-0">{displayName}</h3>
+                    <h3 className="font-bold text-[#1F2957] text-xl mb-3 flex-shrink-0 transition-colors duration-300 group-hover:text-[#151c3d]">{displayName}</h3>
                     <div className="flex flex-col flex-1 min-h-[7rem] gap-3">
                       <div className="flex flex-wrap gap-2 content-start max-h-[4rem] overflow-hidden">
                         {specs.slice(0, 8).map((spec, index) => (
                           <span
                             key={index}
-                            className="bg-[#FFFBEB] border border-amber-200 text-[#1F2957] text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap"
+                            className="bg-[#FFFBEB] border border-amber-200 text-[#1F2957] text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-colors duration-300 group-hover:bg-amber-100 group-hover:border-amber-400"
                           >
                             {spec}
                           </span>
                         ))}
                       </div>
                       <div className="mt-auto pt-1 flex-shrink-0">
-                        <span className="inline-flex items-center gap-1.5 bg-[#E8F0FE] text-[#1F2957] text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <span className="inline-flex items-center gap-1.5 bg-[#E8F0FE] text-[#1F2957] text-xs font-semibold px-3 py-1.5 rounded-full transition-colors duration-300 group-hover:bg-blue-100 group-hover:text-[#151c3d]">
                           <span aria-hidden>📍</span> {location}
                         </span>
                       </div>
@@ -95,7 +95,7 @@ export default function CoachesSection({
           <div className="absolute inset-0 flex items-center justify-center bg-[#F3F0EB]/50">
             <Link
               href="/formulaire/recruteur"
-              className="bg-[#1F2957] text-white font-bold px-8 py-4 rounded-xl hover:bg-[#151c3d] transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 z-10"
+              className="bg-[#1F2957] text-white font-bold px-8 py-4 rounded-xl shadow-lg z-10 transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-xl hover:bg-[#151c3d]"
             >
               Lancer votre recherche !
             </Link>

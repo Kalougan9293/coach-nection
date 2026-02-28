@@ -505,11 +505,11 @@ export default function RecruteurForm() {
                 setInvalidFields(new Set());
                 setError(null);
                 nextStep();
-              }} className="px-8 py-3 bg-[#1F2957] text-white font-bold rounded-xl hover:bg-[#151c3d] shadow-md transition-all">
+              }} className="px-8 py-3 bg-[#1F2957] text-white font-bold rounded-xl shadow-md transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-xl hover:bg-[#151c3d]">
                 Suivant →
               </button>
             ) : (
-              <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="px-8 py-3 bg-[#D4DC53] text-[#1F2957] font-bold rounded-xl hover:bg-[#c4cc43] shadow-md transition-all disabled:opacity-50">
+              <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="px-8 py-3 bg-[#D4DC53] text-[#1F2957] font-bold rounded-xl shadow-md transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-xl hover:bg-[#c4cc43] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:scale-100">
                 {isSubmitting ? 'Envoi...' : 'Valider ma demande ✓'}
               </button>
             )}
