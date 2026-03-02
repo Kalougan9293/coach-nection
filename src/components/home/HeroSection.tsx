@@ -22,7 +22,7 @@ export default function HeroSection() {
           coach !
         </p>
         <p className="text-sm md:text-base text-primary/60 mb-6 w-full">
-          Réseau de mise en relation Coach & Recruteur
+          L&apos;agence qui simplifie le coaching : on sélectionne, vous décidez.
         </p>
 
         {/* Vidéo : même largeur max que le bloc stats */}

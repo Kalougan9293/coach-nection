@@ -80,6 +80,27 @@ export default function AnnouncementsSection({
             })
           )}
         </div>
+
+        {/* Bande floutée sous les annonces (même effet que sous les coachs, sans CTA) */}
+        <div className="relative mt-6 h-14 sm:h-16 overflow-hidden rounded-2xl">
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 absolute inset-0"
+            aria-hidden
+          >
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-2xl overflow-hidden shadow-md bg-white flex-shrink-0 -mb-24">
+                <div
+                  className="aspect-[4/3] w-full blur-2xl scale-110 bg-cover bg-center opacity-90"
+                  style={{
+                    backgroundImage: `url(https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80)`,
+                    backgroundPosition: `${(i * 25) % 100}% ${(i * 15) % 100}%`,
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="absolute inset-0 bg-[#F3F0EB]/50" />
+        </div>
       </div>
     </section>
   );

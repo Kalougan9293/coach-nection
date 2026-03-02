@@ -78,7 +78,7 @@ export default function CoachesSection({
         </div>
 
         {/* 3ème ligne : haut des profils floutés + CTA */}
-        <div className="relative mt-6 h-28 sm:h-32 overflow-hidden rounded-2xl">
+        <div className="relative mt-6 h-20 sm:h-24 overflow-hidden rounded-2xl">
           <div
             className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 absolute inset-0"
             aria-hidden
