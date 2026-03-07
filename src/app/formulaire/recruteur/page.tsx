@@ -166,6 +166,12 @@ export default function RecruteurForm() {
       console.error(supabaseError);
     } else {
       setIsSuccess(true);
+      // Alerte webhook Make après insertion réussie
+      fetch('https://hook.eu1.make.com/ntt994gqpiedfpp547m92s855mvb4e93', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalPayload)
+      }).catch((err) => console.error('Webhook Make:', err));
     }
     setIsSubmitting(false);
   };
