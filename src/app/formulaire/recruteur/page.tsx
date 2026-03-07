@@ -323,9 +323,9 @@ export default function RecruteurForm() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('type_contrat') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
+                <div>
                   <label className="block text-sm font-bold text-[#1F2957] mb-2">Type de contrat *</label>
-                  <select required name="type_contrat" value={formData.type_contrat} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none bg-white">
+                  <select required name="type_contrat" value={formData.type_contrat} onChange={handleChange} className={`w-full px-4 py-3 rounded-xl border outline-none bg-white focus:ring-2 focus:ring-[#D4DC53] ${invalidFields.has('type_contrat') ? 'border-2 border-red-500 bg-red-50' : 'border-gray-200'}`}>
                     <option value="">Sélectionner...</option>
                     <option value="Freelance (Prestation)">Freelance (Prestation)</option>
                     <option value="CDI">CDI</option>

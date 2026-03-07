@@ -622,7 +622,7 @@ export default function CoachForm() {
                   Zone d&apos;intervention (Départements) *
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Saisissez 2 chiffres (ex: 75) ou 2A / 2B pour la Corse — le
+                  Saisissez 2 chiffres (ex: 75, 92) ou 2A / 2B pour la Corse — le
                   département s&apos;ajoute automatiquement.
                 </p>
                 <input
@@ -631,7 +631,7 @@ export default function CoachForm() {
                   maxLength={2}
                   value={deptInput}
                   onChange={handleDeptInputChange}
-                  placeholder="75 ou 2A"
+                  placeholder="75 et 92"
                   className="w-20 px-3 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all text-center text-lg uppercase"
                 />
                 {formData.departements.length > 0 && (
