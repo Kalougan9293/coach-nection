@@ -188,7 +188,12 @@ export default function AdminPage() {
 
   const setStatut = async (id: string, statut: string) => {
     setUpdatingId(id);
-    await supabase.from("demandes").update({ statut }).eq("id", id);
+    const { error } = await supabase.from("demandes").update({ statut }).eq("id", id);
+    if (!error) {
+      setDemandes((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, statut } : d))
+      );
+    }
     setUpdatingId(null);
   };
 
