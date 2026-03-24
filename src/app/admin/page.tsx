@@ -713,16 +713,21 @@ export default function AdminPage() {
                         details: devisForm.details.trim() || null,
                         statut: devisForm.statut,
                       };
-                      const { error: insertError } = await supabase.from("suivi_devis").insert([payload]);
+                      const { data: insertedRows, error: insertError } = await supabase
+                        .from("suivi_devis")
+                        .insert([payload])
+                        .select("*");
                       if (insertError) {
                         console.error("Insert suivi_devis error:", insertError, payload);
                         alert("Impossible d'ajouter le devis. Vérifiez les policies RLS et le schéma de suivi_devis.");
                         setDevisLoading(false);
                         return;
                       }
+                      // Ajout local immédiat (évite un rechargement complet qui peut surprendre l'admin)
+                      if (insertedRows && insertedRows.length > 0) {
+                        setDevis((prev) => [insertedRows[0] as DevisRow, ...prev]);
+                      }
                       setDevisForm({ nom_client: "", montant: "", details: "", statut: "En attente" });
-                      const { data } = await supabase.from("suivi_devis").select("*").order("created_at", { ascending: false });
-                      if (data) setDevis(data as DevisRow[]);
                       setDevisLoading(false);
                     }}
                   >
@@ -803,7 +808,16 @@ export default function AdminPage() {
                                 onClick={async () => {
                                   if (!window.confirm("Supprimer ce devis ?")) return;
                                   setUpdatingId(dv.id);
-                                  await supabase.from("suivi_devis").delete().eq("id", dv.id);
+                                  const { error: deleteError } = await supabase
+                                    .from("suivi_devis")
+                                    .delete()
+                                    .eq("id", dv.id);
+                                  if (deleteError) {
+                                    console.error("Delete suivi_devis error:", deleteError, { id: dv.id });
+                                    alert("Impossible de supprimer ce devis.");
+                                    setUpdatingId(null);
+                                    return;
+                                  }
                                   setDevis((prev) => prev.filter((x) => x.id !== dv.id));
                                   setUpdatingId(null);
                                 }}
