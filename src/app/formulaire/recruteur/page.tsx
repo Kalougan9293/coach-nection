@@ -35,6 +35,7 @@ export default function RecruteurForm() {
   // Gestion des horaires dynamiques
   const [horairesADefinir, setHorairesADefinir] = useState(true);
   const [horairesList, setHorairesList] = useState([{ jour: 'Lundi', debut: '09:00', fin: '10:00' }]);
+  const [horairesFrequence, setHorairesFrequence] = useState<'ponctuel' | 'fixe' | null>(null);
 
   // Gestion des types de contact
   const [useEmail, setUseEmail] = useState(false);
@@ -143,6 +144,7 @@ export default function RecruteurForm() {
       statut: "en_cours",
       horaires_a_definir: horairesADefinir,
       horaires_details: horairesADefinir ? null : horairesList,
+      horaires_frequence: horairesFrequence,
       diplome_requis: formData.diplome_requis || null,
       type_contrat: formData.type_contrat,
       tarif_propose: isNaN(tarifNumeric) ? null : tarifNumeric,
@@ -326,6 +328,33 @@ export default function RecruteurForm() {
                     </button>
                   </div>
                 )}
+                <div className="pt-4 mt-4 border-t border-gray-200">
+                  <p className="text-xs text-[#1F2957]/70 mb-3">Optionnel</p>
+                  <div className="flex flex-wrap items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm text-[#1F2957]">
+                      <input
+                        type="checkbox"
+                        checked={horairesFrequence === 'ponctuel'}
+                        onChange={() =>
+                          setHorairesFrequence((prev) => (prev === 'ponctuel' ? null : 'ponctuel'))
+                        }
+                        className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53] border-gray-300"
+                      />
+                      <span>Ponctuel</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm text-[#1F2957]">
+                      <input
+                        type="checkbox"
+                        checked={horairesFrequence === 'fixe'}
+                        onChange={() =>
+                          setHorairesFrequence((prev) => (prev === 'fixe' ? null : 'fixe'))
+                        }
+                        className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53] border-gray-300"
+                      />
+                      <span>Fixe</span>
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -354,9 +383,17 @@ export default function RecruteurForm() {
                 </div>
               </div>
 
-              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('description') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
+              <div>
                 <label className="block text-sm font-bold text-[#1F2957] mb-2">Description complète de l&apos;annonce *</label>
-                <textarea required name="description" rows={5} placeholder="Décrivez votre besoin en détail (matériel à disposition, nombre de participants, objectifs...)" value={formData.description} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all" />
+                <textarea
+                  required
+                  name="description"
+                  rows={5}
+                  placeholder="Décrivez votre besoin en détail (matériel à disposition, nombre de participants, objectifs...)"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 rounded-xl border outline-none transition-all focus:ring-2 focus:ring-[#D4DC53] ${invalidFields.has('description') ? 'border-2 border-red-500 bg-red-50' : 'border-gray-200'}`}
+                />
               </div>
 
               <div>

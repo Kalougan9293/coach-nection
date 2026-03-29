@@ -35,6 +35,7 @@ type DemandeRecord = {
   statut: string | null;
   horaires_a_definir?: boolean | null;
   horaires_details?: { jour: string; debut: string; fin: string }[] | null;
+  horaires_frequence?: string | null;
   diplome_requis?: string | null;
   type_contrat?: string | null;
   tarif_propose?: number | null;
@@ -60,6 +61,7 @@ export default function AdminEditAnnoncePage() {
   const [success, setSuccess] = useState(false);
   const [horairesADefinir, setHorairesADefinir] = useState(true);
   const [horairesList, setHorairesList] = useState<{ jour: string; debut: string; fin: string }[]>([{ jour: "Lundi", debut: "09:00", fin: "10:00" }]);
+  const [horairesFrequence, setHorairesFrequence] = useState<"ponctuel" | "fixe" | null>(null);
 
   const [formData, setFormData] = useState({
     titre_annonce: "",
@@ -129,6 +131,8 @@ export default function AdminEditAnnoncePage() {
           ? d.horaires_details
           : [{ jour: "Lundi", debut: "09:00", fin: "10:00" }]
       );
+      const hf = d.horaires_frequence;
+      setHorairesFrequence(hf === "ponctuel" || hf === "fixe" ? hf : null);
       setLoading(false);
     }
     fetchDemande();
@@ -174,6 +178,7 @@ export default function AdminEditAnnoncePage() {
       statut: formData.statut,
       horaires_a_definir: horairesADefinir,
       horaires_details: horairesADefinir ? null : horairesList,
+      horaires_frequence: horairesFrequence,
       diplome_requis: formData.diplome_requis || null,
       type_contrat: formData.type_contrat || null,
       tarif_propose: Number.isNaN(tarifNum) ? null : tarifNum,
@@ -366,6 +371,33 @@ export default function AdminEditAnnoncePage() {
                     </button>
                   </div>
                 )}
+                <div className="pt-3 mt-3 border-t border-gray-200">
+                  <p className="text-xs text-[#1F2957]/70 mb-2">Optionnel</p>
+                  <div className="flex flex-wrap items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm">
+                      <input
+                        type="checkbox"
+                        checked={horairesFrequence === "ponctuel"}
+                        onChange={() =>
+                          setHorairesFrequence((prev) => (prev === "ponctuel" ? null : "ponctuel"))
+                        }
+                        className="w-4 h-4 rounded"
+                      />
+                      <span>Ponctuel</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm">
+                      <input
+                        type="checkbox"
+                        checked={horairesFrequence === "fixe"}
+                        onChange={() =>
+                          setHorairesFrequence((prev) => (prev === "fixe" ? null : "fixe"))
+                        }
+                        className="w-4 h-4 rounded"
+                      />
+                      <span>Fixe</span>
+                    </label>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className={labelClass}>Description complète *</label>
