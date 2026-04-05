@@ -23,7 +23,41 @@ const DIPLOMES_LIST = [
   "Autre diplôme spécialisé", "Diplôme bien être", "Étudiant"
 ];
 
+const TYPE_MISSION_LIST = [
+  "Ponctuelle",
+  "Courte durée",
+  "Longue durée",
+  "Remplacement / intérim",
+  "Autre",
+];
+
 const JOURS_SEMAINE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+/** Clés = noms exacts des colonnes `public.demandes` (insertion Supabase). */
+type DemandeInsertPayload = {
+  type_demandeur: string;
+  ville: string;
+  specialites: string[];
+  type_cours: string[];
+  type_mission: string | null;
+  statut: string;
+  horaires_a_definir: boolean;
+  horaires_details: { jour: string; debut: string; fin: string }[] | null;
+  diplome_requis: string | null;
+  type_contrat: string;
+  tarif_propose: number | null;
+  titre_annonce: string;
+  description: string;
+  profil_recherche: string | null;
+  budget_recherche: number;
+  nom_contact: string;
+  contact_email: string | null;
+  contact_telephone: string | null;
+  contact_reseau: string | null;
+  siret: string | null;
+  connu_par: string | null;
+  cgv_acceptees: boolean;
+};
 
 export default function RecruteurForm() {
   const [step, setStep] = useState(1);
@@ -35,7 +69,6 @@ export default function RecruteurForm() {
   // Gestion des horaires dynamiques
   const [horairesADefinir, setHorairesADefinir] = useState(true);
   const [horairesList, setHorairesList] = useState([{ jour: 'Lundi', debut: '09:00', fin: '10:00' }]);
-  const [horairesFrequence, setHorairesFrequence] = useState<'ponctuel' | 'fixe' | null>(null);
 
   // Gestion des types de contact
   const [useEmail, setUseEmail] = useState(false);
@@ -45,7 +78,7 @@ export default function RecruteurForm() {
   const [formData, setFormData] = useState({
     // Page 1
     titre_annonce: '', type_demandeur: '', ville: '', specialite_recherchee: '', 
-    autre_specialite: '', type_cours: '', diplome_requis: '', 
+    autre_specialite: '', type_cours: '', type_mission: '', diplome_requis: '', 
     type_contrat: '', tarif_propose: '', description: '', profil_recherche: '',
     // Page 2
     budget_recherche: 0, nom_contact: '', contact_email: '', contact_telephone: '', 
@@ -55,9 +88,9 @@ export default function RecruteurForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setInvalidFields(prev => { const n = new Set(prev); n.delete(name); return n; });
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({ ...prev, [name]: checked }));
+    if (type === "checkbox") {
+      const checked = Boolean((e.target as HTMLInputElement).checked);
+      setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
       if (name === 'titre_annonce' && value.length > 50) return;
       setFormData(prev => ({ ...prev, [name]: type === 'range' ? parseInt(value) : value }));
@@ -117,7 +150,7 @@ export default function RecruteurForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.cgv_acceptees) {
+    if (formData.cgv_acceptees !== true) {
       setError("Vous devez accepter les conditions générales pour continuer.");
       return;
     }
@@ -136,35 +169,46 @@ export default function RecruteurForm() {
           : [formData.specialite_recherchee])
       : [];
 
-    const finalPayload = {
+    const trimOrNull = (s: string) => {
+      const t = s.trim();
+      return t === "" ? null : t;
+    };
+
+    const finalPayload: DemandeInsertPayload = {
       type_demandeur: formData.type_demandeur,
       ville: formData.ville,
       specialites: finalSpecialites,
       type_cours: formData.type_cours ? [formData.type_cours] : [],
+      type_mission: trimOrNull(formData.type_mission),
       statut: "en_cours",
-      horaires_a_definir: horairesADefinir,
+      horaires_a_definir: Boolean(horairesADefinir),
       horaires_details: horairesADefinir ? null : horairesList,
-      horaires_frequence: horairesFrequence,
-      diplome_requis: formData.diplome_requis || null,
+      diplome_requis: formData.diplome_requis ? trimOrNull(formData.diplome_requis) : null,
       type_contrat: formData.type_contrat,
       tarif_propose: isNaN(tarifNumeric) ? null : tarifNumeric,
-      titre_annonce: formData.titre_annonce,
-      description: formData.description,
-      profil_recherche: formData.profil_recherche,
-      budget_recherche: formData.budget_recherche,
-      nom_contact: formData.nom_contact,
-      contact_email: useEmail ? formData.contact_email : null,
-      contact_telephone: usePhone ? formData.contact_telephone : null,
-      contact_reseau: useInsta ? formData.contact_reseau : null,
-      siret: formData.siret,
-      connu_par: formData.connu_par,
-      cgv_acceptees: formData.cgv_acceptees
+      titre_annonce: formData.titre_annonce.trim(),
+      description: formData.description.trim(),
+      profil_recherche: trimOrNull(formData.profil_recherche),
+      budget_recherche: Number(formData.budget_recherche),
+      nom_contact: formData.nom_contact.trim(),
+      contact_email: useEmail ? trimOrNull(formData.contact_email) : null,
+      contact_telephone: usePhone ? trimOrNull(formData.contact_telephone) : null,
+      contact_reseau: useInsta ? trimOrNull(formData.contact_reseau) : null,
+      siret: trimOrNull(formData.siret),
+      connu_par: trimOrNull(formData.connu_par),
+      cgv_acceptees: true,
     };
 
-    const { error: supabaseError } = await supabase.from('demandes').insert([finalPayload]);
+    const { error: supabaseError } = await supabase.from("demandes").insert([finalPayload]);
 
     if (supabaseError) {
-      setError("Une erreur est survenue. Veuillez réessayer.");
+      const err = supabaseError as { message?: string; details?: string; hint?: string };
+      const detail = [err.message, err.details, err.hint].filter(Boolean).join(" — ");
+      setError(
+        detail
+          ? `Impossible d'enregistrer la demande. ${detail}`
+          : "Une erreur est survenue. Veuillez réessayer."
+      );
       console.error(supabaseError);
     } else {
       setIsSuccess(true);
@@ -290,6 +334,29 @@ export default function RecruteurForm() {
                 </select>
               </div>
 
+              <div className={`rounded-xl p-4 transition-colors ${invalidFields.has('type_mission') ? 'border-2 border-red-500 bg-red-50' : ''}`}>
+                <label className="block text-sm font-bold text-[#1F2957] mb-2">Type de mission *</label>
+                <select
+                  required
+                  name="type_mission"
+                  value={formData.type_mission}
+                  onChange={(e) => {
+                    setInvalidFields((prev) => {
+                      const n = new Set(prev);
+                      n.delete("type_mission");
+                      return n;
+                    });
+                    setFormData((prev) => ({ ...prev, type_mission: e.target.value }));
+                  }}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#D4DC53] outline-none bg-white transition-all"
+                >
+                  <option value="">Sélectionnez un type de mission</option>
+                  {TYPE_MISSION_LIST.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* SECTION HORAIRES */}
               <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
                 <label className="block text-sm font-bold text-[#1F2957] mb-3">Horaires souhaités *</label>
@@ -328,33 +395,6 @@ export default function RecruteurForm() {
                     </button>
                   </div>
                 )}
-                <div className="pt-4 mt-4 border-t border-gray-200">
-                  <p className="text-xs text-[#1F2957]/70 mb-3">Optionnel</p>
-                  <div className="flex flex-wrap items-center gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer text-sm text-[#1F2957]">
-                      <input
-                        type="checkbox"
-                        checked={horairesFrequence === 'ponctuel'}
-                        onChange={() =>
-                          setHorairesFrequence((prev) => (prev === 'ponctuel' ? null : 'ponctuel'))
-                        }
-                        className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53] border-gray-300"
-                      />
-                      <span>Ponctuel</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-sm text-[#1F2957]">
-                      <input
-                        type="checkbox"
-                        checked={horairesFrequence === 'fixe'}
-                        onChange={() =>
-                          setHorairesFrequence((prev) => (prev === 'fixe' ? null : 'fixe'))
-                        }
-                        className="w-4 h-4 rounded text-[#1F2957] focus:ring-[#D4DC53] border-gray-300"
-                      />
-                      <span>Fixe</span>
-                    </label>
-                  </div>
-                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -538,10 +578,11 @@ export default function RecruteurForm() {
                 if (!formData.description) missing.push('description');
                 if (!formData.specialite_recherchee) missing.push('specialite_recherchee');
                 if (!formData.type_cours) missing.push('type_cours');
+                if (!formData.type_mission) missing.push('type_mission');
                 if (missing.length > 0) {
                   setInvalidFields(new Set(missing));
-                  setError(missing.includes('specialite_recherchee') || missing.includes('type_cours')
-                    ? "Veuillez sélectionner une spécialité recherchée et un type de cours."
+                  setError(missing.includes('specialite_recherchee') || missing.includes('type_cours') || missing.includes('type_mission')
+                    ? "Veuillez sélectionner une spécialité, un type de cours et un type de mission."
                     : "Veuillez remplir tous les champs obligatoires (*) avant de continuer.");
                   return;
                 }

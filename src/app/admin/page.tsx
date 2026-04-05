@@ -500,7 +500,7 @@ export default function AdminPage() {
                     type_cours?: string[] | null;
                     horaires_a_definir?: boolean;
                     horaires_details?: { jour: string; debut: string; fin: string }[] | null;
-                    horaires_frequence?: string | null;
+                    type_mission?: string | null;
                     description?: string | null;
                     profil_recherche?: string | null;
                     siret?: string | null;
@@ -556,12 +556,7 @@ export default function AdminPage() {
                           <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Spécialités :</span> {formatSpecs(d.specialites)}</p>
                           <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Types de cours :</span> {formatTypeCours(dx.type_cours)}</p>
                           <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Horaires :</span> {formatHorairesDemande(d)}</p>
-                          {(dx.horaires_frequence === "ponctuel" || dx.horaires_frequence === "fixe") && (
-                            <p className="sm:col-span-2">
-                              <span className="font-medium text-[#1F2957]">Fréquence :</span>{" "}
-                              {dx.horaires_frequence === "ponctuel" ? "Ponctuel" : "Fixe"}
-                            </p>
-                          )}
+                          <p><span className="font-medium text-[#1F2957]">Type de mission :</span> {dx.type_mission ?? "—"}</p>
                           <p><span className="font-medium text-[#1F2957]">Type de contrat :</span> {dx.type_contrat ?? "—"}</p>
                           <p><span className="font-medium text-[#1F2957]">Diplôme requis :</span> {dx.diplome_requis ?? "—"}</p>
                           <p className="sm:col-span-2"><span className="font-medium text-[#1F2957]">Description :</span> {dx.description ?? "—"}</p>

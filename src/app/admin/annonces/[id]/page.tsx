@@ -23,6 +23,13 @@ const DIPLOMES_LIST = [
   "BPJEPS", "STAPS", "CQP", "Formation privée",
   "Autre diplôme spécialisé", "Diplôme bien être", "Étudiant",
 ];
+const TYPE_MISSION_LIST = [
+  "Ponctuelle",
+  "Courte durée",
+  "Longue durée",
+  "Remplacement / intérim",
+  "Autre",
+];
 const JOURS_SEMAINE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 type DemandeRecord = {
@@ -49,6 +56,7 @@ type DemandeRecord = {
   siret?: string | null;
   connu_par?: string | null;
   cgv_acceptees?: boolean | null;
+  type_mission?: string | null;
 };
 
 export default function AdminEditAnnoncePage() {
@@ -61,7 +69,6 @@ export default function AdminEditAnnoncePage() {
   const [success, setSuccess] = useState(false);
   const [horairesADefinir, setHorairesADefinir] = useState(true);
   const [horairesList, setHorairesList] = useState<{ jour: string; debut: string; fin: string }[]>([{ jour: "Lundi", debut: "09:00", fin: "10:00" }]);
-  const [horairesFrequence, setHorairesFrequence] = useState<"ponctuel" | "fixe" | null>(null);
 
   const [formData, setFormData] = useState({
     titre_annonce: "",
@@ -70,6 +77,7 @@ export default function AdminEditAnnoncePage() {
     specialite_recherchee: "",
     autre_specialite: "",
     type_cours: "",
+    type_mission: "",
     statut: "en_cours",
     type_contrat: "",
     diplome_requis: "",
@@ -110,6 +118,7 @@ export default function AdminEditAnnoncePage() {
         specialite_recherchee,
         autre_specialite,
         type_cours,
+        type_mission: d.type_mission ?? "",
         statut: d.statut === "trouve" ? "trouve" : "en_cours",
         type_contrat: d.type_contrat ?? "",
         diplome_requis: d.diplome_requis ?? "",
@@ -131,8 +140,6 @@ export default function AdminEditAnnoncePage() {
           ? d.horaires_details
           : [{ jour: "Lundi", debut: "09:00", fin: "10:00" }]
       );
-      const hf = d.horaires_frequence;
-      setHorairesFrequence(hf === "ponctuel" || hf === "fixe" ? hf : null);
       setLoading(false);
     }
     fetchDemande();
@@ -175,10 +182,10 @@ export default function AdminEditAnnoncePage() {
       ville: formData.ville || null,
       specialites,
       type_cours,
+      type_mission: formData.type_mission || null,
       statut: formData.statut,
       horaires_a_definir: horairesADefinir,
       horaires_details: horairesADefinir ? null : horairesList,
-      horaires_frequence: horairesFrequence,
       diplome_requis: formData.diplome_requis || null,
       type_contrat: formData.type_contrat || null,
       tarif_propose: Number.isNaN(tarifNum) ? null : tarifNum,
@@ -302,6 +309,18 @@ export default function AdminEditAnnoncePage() {
                 </select>
               </div>
               <div>
+                <label className={labelClass}>Type de mission</label>
+                <select name="type_mission" value={formData.type_mission} onChange={handleChange} className={inputClass}>
+                  <option value="">Non renseigné</option>
+                  {formData.type_mission && !TYPE_MISSION_LIST.includes(formData.type_mission) && (
+                    <option value={formData.type_mission}>{formData.type_mission}</option>
+                  )}
+                  {TYPE_MISSION_LIST.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className={labelClass}>Statut</label>
                 <select name="statut" value={formData.statut} onChange={handleChange} className={inputClass}>
                   <option value="en_cours">⏳ En cours</option>
@@ -371,33 +390,6 @@ export default function AdminEditAnnoncePage() {
                     </button>
                   </div>
                 )}
-                <div className="pt-3 mt-3 border-t border-gray-200">
-                  <p className="text-xs text-[#1F2957]/70 mb-2">Optionnel</p>
-                  <div className="flex flex-wrap items-center gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer text-sm">
-                      <input
-                        type="checkbox"
-                        checked={horairesFrequence === "ponctuel"}
-                        onChange={() =>
-                          setHorairesFrequence((prev) => (prev === "ponctuel" ? null : "ponctuel"))
-                        }
-                        className="w-4 h-4 rounded"
-                      />
-                      <span>Ponctuel</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-sm">
-                      <input
-                        type="checkbox"
-                        checked={horairesFrequence === "fixe"}
-                        onChange={() =>
-                          setHorairesFrequence((prev) => (prev === "fixe" ? null : "fixe"))
-                        }
-                        className="w-4 h-4 rounded"
-                      />
-                      <span>Fixe</span>
-                    </label>
-                  </div>
-                </div>
               </div>
               <div>
                 <label className={labelClass}>Description complète *</label>
