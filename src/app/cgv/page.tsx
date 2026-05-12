@@ -122,8 +122,8 @@ export default function CGVPage() {
           <h2 className="text-xl font-bold text-[#1F2957] mb-4">8. Litiges et médiation</h2>
           <p className="mb-4">
             En cas de souci, contactez-nous d&apos;abord pour tenter une résolution amiable :{" "}
-            <a href="mailto:contact@coach-nection.com" className={linkClass}>
-              contact@coach-nection.com
+            <a href="mailto:contact.coach.nection@gmail.com" className={linkClass}>
+              contact.coach.nection@gmail.com
             </a>
             .
           </p>

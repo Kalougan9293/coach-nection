@@ -41,8 +41,8 @@ export default function MentionsLegalesPage() {
           <p className="mb-2">Numéro de téléphone : 06.62.28.86.56</p>
           <p className="mb-2">
             Adresse e-mail :{" "}
-            <a href="mailto:contact@coach-nection.com" className={linkClass}>
-              contact@coach-nection.com
+            <a href="mailto:contact.coach.nection@gmail.com" className={linkClass}>
+              contact.coach.nection@gmail.com
             </a>
           </p>
           <p>Directeur de la publication : Seroussi Jonathan</p>
@@ -99,8 +99,8 @@ export default function MentionsLegalesPage() {
             L&apos;utilisateur dispose d&apos;un droit d&apos;accès, de rectification, d&apos;opposition,
             de portabilité, de limitation et de suppression de ses données personnelles, qu&apos;il
             peut exercer à tout moment par e-mail à{" "}
-            <a href="mailto:contact@coach-nection.com" className={linkClass}>
-              contact@coach-nection.com
+            <a href="mailto:contact.coach.nection@gmail.com" className={linkClass}>
+              contact.coach.nection@gmail.com
             </a>
             .
           </p>
@@ -164,8 +164,8 @@ export default function MentionsLegalesPage() {
           <p>
             Pour toute question, signalement de contenu ou demande de support, vous pouvez nous
             contacter à :{" "}
-            <a href="mailto:contact@coach-nection.com" className={linkClass}>
-              contact@coach-nection.com
+            <a href="mailto:contact.coach.nection@gmail.com" className={linkClass}>
+              contact.coach.nection@gmail.com
             </a>
           </p>
         </section>
