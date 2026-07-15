@@ -2,13 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { DEPARTEMENTS_LIST as SHARED_DEPARTEMENTS_LIST, prepareDepartementsForSupabase } from "@/lib/departements";
 
 // --- LISTES PRÉDÉFINIES (01-95 + Corse 2A, 2B) ---
-const DEPARTEMENTS_LIST = [
-  ...Array.from({ length: 95 }, (_, i) => (i + 1).toString().padStart(2, "0")),
-  "2A",
-  "2B",
-];
+const DEPARTEMENTS_LIST = [...SHARED_DEPARTEMENTS_LIST];
 
 const SPECIALITES_LIST = [
   "Activité douce",
@@ -216,7 +213,10 @@ export default function CoachForm() {
         });
         setFormData((prev) => {
           if (prev.departements.includes(normalized)) return prev;
-          return { ...prev, departements: [...prev.departements, normalized] };
+          return {
+            ...prev,
+            departements: prepareDepartementsForSupabase([...prev.departements, normalized]),
+          };
         });
         setDeptInput("");
       }
@@ -302,6 +302,13 @@ export default function CoachForm() {
       return;
     }
 
+    const finalDepartements = prepareDepartementsForSupabase(formData.departements);
+    if (finalDepartements.length === 0) {
+      setError("Veuillez indiquer au moins un département d'intervention.");
+      setInvalidFields(new Set(["departements"]));
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -378,7 +385,7 @@ export default function CoachForm() {
       date_naissance: formData.date_naissance,
       photo_url: photoUrl,
       diplome_url: diplomeUrl,
-      ville: formData.departements.join(", "),
+      departements: finalDepartements,
       specialites: finalSpecialites,
       type_cours: formData.type_cours,
       diplome: formData.diplomes.length ? formData.diplomes.join(", ") : null,

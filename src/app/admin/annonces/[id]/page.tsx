@@ -4,6 +4,15 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { buildMatchingCoachsQuery } from "@/lib/matching";
+import {
+  DEPARTEMENTS_LIST,
+  extractDepartementsFromVille,
+  mergeDepartements,
+  normalizeDepartementCode,
+  resolveDepartementsForRow,
+  toDepartementsArray,
+} from "@/lib/departements";
 
 const SPECIALITES_LIST = [
   "Activité douce", "Calisthénie", "Cardio", "Crossfit", "Cross-training",
@@ -37,6 +46,7 @@ type DemandeRecord = {
   titre_annonce: string | null;
   type_demandeur: string | null;
   ville: string | null;
+  departements: string[] | null;
   specialites: string[] | null;
   type_cours: string[] | null;
   statut: string | null;
@@ -69,6 +79,10 @@ export default function AdminEditAnnoncePage() {
   const [success, setSuccess] = useState(false);
   const [horairesADefinir, setHorairesADefinir] = useState(true);
   const [horairesList, setHorairesList] = useState<{ jour: string; debut: string; fin: string }[]>([{ jour: "Lundi", debut: "09:00", fin: "10:00" }]);
+  const [departements, setDepartements] = useState<string[]>([]);
+  const [deptInput, setDeptInput] = useState("");
+  const [matchingCoachs, setMatchingCoachs] = useState<{ id: string; prenom: string | null; nom: string | null }[]>([]);
+  const [matchingLoading, setMatchingLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     titre_annonce: "",
@@ -134,6 +148,8 @@ export default function AdminEditAnnoncePage() {
         connu_par: d.connu_par ?? "",
         cgv_acceptees: !!d.cgv_acceptees,
       });
+      const loadedDepts = resolveDepartementsForRow(d.departements, { fallbackVille: d.ville });
+      setDepartements(loadedDepts);
       setHorairesADefinir(d.horaires_a_definir ?? true);
       setHorairesList(
         Array.isArray(d.horaires_details) && d.horaires_details.length > 0
@@ -145,14 +161,80 @@ export default function AdminEditAnnoncePage() {
     fetchDemande();
   }, [id]);
 
+  useEffect(() => {
+    if (loading) return;
+    let cancelled = false;
+    async function loadMatches() {
+      setMatchingLoading(true);
+      const specialites =
+        formData.specialite_recherchee === "Autres" && formData.autre_specialite
+          ? [`Autres : ${formData.autre_specialite}`]
+          : formData.specialite_recherchee
+            ? [formData.specialite_recherchee]
+            : [];
+      const type_cours = formData.type_cours ? [formData.type_cours] : [];
+      const { data, error } = await buildMatchingCoachsQuery(supabase, {
+        specialites,
+        type_cours,
+        departements: [...toDepartementsArray(departements)],
+      });
+      if (!cancelled && !error && data) {
+        setMatchingCoachs(
+          (data as { id: string; prenom: string | null; nom: string | null }[]).map((c) => ({
+            id: c.id,
+            prenom: c.prenom,
+            nom: c.nom,
+          }))
+        );
+      }
+      if (!cancelled) setMatchingLoading(false);
+    }
+    loadMatches();
+    return () => { cancelled = true; };
+  }, [
+    loading,
+    departements,
+    formData.specialite_recherchee,
+    formData.autre_specialite,
+    formData.type_cours,
+  ]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
       setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
     } else {
       const val = name === "budget_recherche" ? parseInt(value, 10) || 0 : value;
-      setFormData((prev) => ({ ...prev, [name]: val }));
+      setFormData((prev) => {
+        const next = { ...prev, [name]: val };
+        if (name === "ville" && typeof val === "string") {
+          const extracted = extractDepartementsFromVille(val);
+          if (extracted.length > 0) {
+            setDepartements((current) => mergeDepartements(current, extracted));
+          }
+        }
+        return next;
+      });
     }
+  };
+
+  const handleDeptInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.toUpperCase().replace(/[^0-9AB]/g, "");
+    let val = raw.slice(0, 2);
+    if (val.length === 1 && /[AB]/.test(val)) return;
+    if (val.length === 2 && val[0] !== "2" && /[AB]/.test(val[1])) return;
+    setDeptInput(val);
+    if (val.length === 2) {
+      const normalized = normalizeDepartementCode(val);
+      if (normalized && (DEPARTEMENTS_LIST as readonly string[]).includes(normalized)) {
+        setDepartements((prev) => mergeDepartements(prev, [normalized]));
+        setDeptInput("");
+      }
+    }
+  };
+
+  const handleRemoveDept = (deptToRemove: string) => {
+    setDepartements((prev) => prev.filter((d) => d !== deptToRemove));
   };
 
   const addHoraire = () => setHorairesList([...horairesList, { jour: "Lundi", debut: "09:00", fin: "10:00" }]);
@@ -180,6 +262,7 @@ export default function AdminEditAnnoncePage() {
       titre_annonce: formData.titre_annonce || null,
       type_demandeur: formData.type_demandeur || null,
       ville: formData.ville || null,
+      departements: [...toDepartementsArray(departements)],
       specialites,
       type_cours,
       type_mission: formData.type_mission || null,
@@ -265,6 +348,28 @@ export default function AdminEditAnnoncePage() {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         <form onSubmit={handleSubmit} className="space-y-8">
+          <section className="bg-[#E8F0FE] rounded-2xl p-5 border border-[#1F2957]/15">
+            <h2 className="text-sm font-bold text-[#1F2957] mb-2">Coachs compatibles (aperçu matching)</h2>
+            <p className="text-xs text-[#1F2957]/70 mb-3">
+              Filtre : specialites &amp;&amp; · type_cours &amp;&amp; · departements @&gt;
+            </p>
+            {matchingLoading ? (
+              <p className="text-sm text-[#1F2957]/60">Recherche...</p>
+            ) : matchingCoachs.length === 0 ? (
+              <p className="text-sm text-amber-800">Aucun coach ne correspond aux critères actuels.</p>
+            ) : (
+              <ul className="space-y-1 text-sm text-[#1F2957]">
+                {matchingCoachs.map((c) => (
+                  <li key={c.id}>
+                    <Link href={`/admin/coachs/${c.id}`} className="font-medium hover:underline">
+                      {[c.prenom, c.nom].filter(Boolean).join(" ") || "Coach"}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium">{error}</div>}
 
           <section className="bg-white rounded-2xl p-6 shadow-md border border-[#1F2957]/10">
@@ -286,6 +391,24 @@ export default function AdminEditAnnoncePage() {
               <div>
                 <label className={labelClass}>Lieu (Ville / Quartier) *</label>
                 <input type="text" name="ville" value={formData.ville} onChange={handleChange} className={inputClass} />
+                <label className={`${labelClass} mt-3`}>Département(s) matching</label>
+                <input
+                  type="text"
+                  value={deptInput}
+                  onChange={handleDeptInputChange}
+                  placeholder="75, 92, 2A..."
+                  className={inputClass}
+                />
+                {departements.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {departements.map((dep) => (
+                      <span key={dep} className="flex items-center gap-2 px-3 py-1 bg-[#D4DC53] text-[#1F2957] text-sm font-bold rounded-full">
+                        Dép. {dep}
+                        <button type="button" onClick={() => handleRemoveDept(dep)} className="hover:text-red-600">×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>Spécialité recherchée *</label>

@@ -4,8 +4,13 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import {
+  DEPARTEMENTS_LIST as SHARED_DEPARTEMENTS_LIST,
+  resolveDepartementsForRow,
+  toDepartementsArray,
+} from "@/lib/departements";
 
-const DEPARTEMENTS_LIST = Array.from({ length: 95 }, (_, i) => (i + 1).toString().padStart(2, "0"));
+const DEPARTEMENTS_LIST = [...SHARED_DEPARTEMENTS_LIST];
 const SPECIALITES_LIST = [
   "Activité douce", "Calisthénie", "Cardio", "Crossfit", "Cross-training",
   "Fitness général", "Danse", "Haltérophilie", "Circuit training", "Hyrox",
@@ -30,7 +35,7 @@ type CoachRecord = {
   id: string;
   nom: string | null;
   prenom: string | null;
-  ville: string | null;
+  departements: string[] | null;
   specialites: string[] | null;
   type_cours: string[] | null;
   prix_base: number | null;
@@ -99,7 +104,7 @@ export default function AdminEditCoachPage() {
         return;
       }
       const c = data as CoachRecord;
-      const departements = (c.ville ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+      const departements = resolveDepartementsForRow(c.departements);
       const specialites = c.specialites ?? [];
       const autreSpec = specialites.find((s) => s.startsWith("Autres :"));
       const specialitesSansAutres = autreSpec
@@ -206,7 +211,7 @@ export default function AdminEditCoachPage() {
       prenom: formData.prenom || null,
       date_naissance: formData.date_naissance || null,
       photo_url: formData.photo_url || null,
-      ville: formData.departements.join(", "),
+      departements: [...toDepartementsArray(formData.departements)],
       specialites: finalSpecialites,
       type_cours: formData.type_cours,
       diplome: formData.diplomes.length ? formData.diplomes.join(", ") : null,

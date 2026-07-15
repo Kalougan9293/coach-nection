@@ -62,7 +62,7 @@ export default function Header() {
                 Déposer une demande
               </Link>
               <Link
-                href="mailto:contact.coach.nection@gmail.com"
+                href="mailto:contact@lockin-web.online"
                 className="px-4 py-3 hover:bg-[#F3F0EB] hover:text-[#003399] transition-colors font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >

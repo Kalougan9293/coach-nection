@@ -32,8 +32,8 @@ export default function ConfidentialitePage() {
           <p>
             Le responsable des données est Jonathan Seroussi, représentant légal de la société
             Coach-Nection (SAS). Vous pouvez le contacter à l&apos;adresse :{" "}
-            <a href="mailto:contact.coach.nection@gmail.com" className={linkClass}>
-              contact.coach.nection@gmail.com
+            <a href="mailto:contact@lockin-web.online" className={linkClass}>
+              contact@lockin-web.online
             </a>
           </p>
         </section>
@@ -103,8 +103,8 @@ export default function ConfidentialitePage() {
           <p className="mb-4">
             Vous pouvez à tout moment demander l&apos;accès à vos données, leur rectification, leur
             suppression, leur portabilité, ou limiter leur traitement en faisant la demande à{" "}
-            <a href="mailto:contact.coach.nection@gmail.com" className={linkClass}>
-              contact.coach.nection@gmail.com
+            <a href="mailto:contact@lockin-web.online" className={linkClass}>
+              contact@lockin-web.online
             </a>
             . Vous pouvez aussi définir ce qu&apos;il advient de vos données après votre décès.
           </p>

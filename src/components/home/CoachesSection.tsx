@@ -1,11 +1,12 @@
 import React from "react";
 import Link from "next/link";
+import { formatDepartementsLabel, resolveDepartementsForRow } from "@/lib/departements";
 
 type Coach = Record<string, unknown> & {
   id?: string;
   prenom?: string | null;
   nom?: string | null;
-  ville?: string | null;
+  departements?: string[] | null;
   specialites?: string[] | null;
   photo_url?: string | null;
 };
@@ -36,7 +37,9 @@ export default function CoachesSection({
           ) : (
             (coachs as Coach[]).map((coach) => {
               const displayName = (coach.prenom as string)?.trim() || "Coach";
-              const location = (coach.ville as string) ?? "—";
+              const location = formatDepartementsLabel(
+                resolveDepartementsForRow(coach.departements as string[] | null | undefined)
+              );
               const specs = (coach.specialites as string[] | undefined) ?? [];
               const imageUrl = (coach.photo_url as string) || PLACEHOLDER_IMAGE;
               return (

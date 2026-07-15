@@ -3,6 +3,10 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import {
+  formatDepartementsLabel,
+  resolveDepartementsForRow,
+} from "@/lib/departements";
 
 const COACHS_PER_PAGE = 20;
 
@@ -21,7 +25,7 @@ type CoachRow = {
   id: string;
   nom: string | null;
   prenom: string | null;
-  ville: string | null;
+  departements: string[] | null;
   specialites: string[] | null;
   type_cours: string[] | null;
   prix_base: number | null;
@@ -45,6 +49,7 @@ type DemandeRow = {
   id: string;
   titre_annonce: string | null;
   ville: string | null;
+  departements?: string[] | null;
   specialites: string[] | null;
   nom_contact: string | null;
   contact_email: string | null;
@@ -154,27 +159,30 @@ export default function AdminPage() {
       const q = search.toLowerCase();
       list = list.filter((c) => {
         const nom = [c.prenom, c.nom].filter(Boolean).join(" ").toLowerCase();
-        const ville = (c.ville ?? "").toLowerCase();
+        const depts = formatDepartementsLabel(resolveDepartementsForRow(c.departements)).toLowerCase();
         const specs = (c.specialites ?? []).join(" ").toLowerCase();
-        return nom.includes(q) || ville.includes(q) || specs.includes(q);
+        return nom.includes(q) || depts.includes(q) || specs.includes(q);
       });
     }
     if (filterDept) {
-      list = list.filter((c) => {
-        const depts = (c.ville ?? "").split(",").map((p) => p.trim()).filter(Boolean);
-        return depts.includes(filterDept);
-      });
+      list = list.filter((c) =>
+        resolveDepartementsForRow(c.departements).includes(filterDept)
+      );
     }
     return list;
   }, [coachs, search, filterDept]);
 
-  const filteredDemandes = useMemo(
-    () =>
-      demandes.filter((d) =>
-        annonceStatutFilter === "trouve" ? d.statut === "trouve" : d.statut !== "trouve"
-      ),
-    [demandes, annonceStatutFilter]
-  );
+  const filteredDemandes = useMemo(() => {
+    let list = demandes.filter((d) =>
+      annonceStatutFilter === "trouve" ? d.statut === "trouve" : d.statut !== "trouve"
+    );
+    if (filterDept) {
+      list = list.filter((d) =>
+        resolveDepartementsForRow(d.departements, { fallbackVille: d.ville }).includes(filterDept)
+      );
+    }
+    return list;
+  }, [demandes, annonceStatutFilter, filterDept]);
 
   const totalCoachPages = Math.max(1, Math.ceil(filteredCoachs.length / COACHS_PER_PAGE));
   const paginatedCoachs = useMemo(
@@ -324,7 +332,7 @@ export default function AdminPage() {
                 <div className="mb-6 flex flex-col sm:flex-row gap-4">
                   <input
                     type="search"
-                    placeholder="Rechercher par nom, ville ou spécialité..."
+                    placeholder="Rechercher par nom, département ou spécialité..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="flex-1 max-w-md px-4 py-3 rounded-xl border border-[#1F2957]/20 bg-white text-[#1F2957] placeholder:text-[#1F2957]/50 focus:ring-2 focus:ring-[#D4DC53] focus:border-[#1F2957]/30 outline-none transition-all"
@@ -377,7 +385,8 @@ export default function AdminPage() {
                           <div className="min-w-0 flex-1">
                             <h3 className="font-bold text-[#1F2957] text-lg">{c.prenom ?? "—"}</h3>
                             <p className="text-sm text-[#1F2957]/80">
-                              <span className="font-medium">Localité :</span> {c.ville ?? "—"}
+                              <span className="font-medium">Départements :</span>{" "}
+                              {formatDepartementsLabel(resolveDepartementsForRow(c.departements))}
                             </p>
                             <p className="text-sm text-[#1F2957]/80">
                               <span className="font-medium">Spécialités :</span> {formatSpecsShort(c.specialites)}
@@ -467,6 +476,20 @@ export default function AdminPage() {
 
             {tab === "annonces" && (
               <div>
+                <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                  <select
+                    value={filterDept}
+                    onChange={(e) => setFilterDept(e.target.value)}
+                    className="px-4 py-3 rounded-xl border border-[#1F2957]/20 bg-white text-[#1F2957] focus:ring-2 focus:ring-[#D4DC53] outline-none transition-all min-w-[12rem]"
+                  >
+                    <option value="">Tous les départements</option>
+                    {DEPARTEMENTS_OPTIONS.map((d) => (
+                      <option key={d} value={d}>
+                        Département {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="flex gap-2 mb-6 border-b border-[#1F2957]/10 pb-2">
                   <button
                     type="button"
@@ -491,6 +514,10 @@ export default function AdminPage() {
                     ✅ Trouvé !
                   </button>
                 </div>
+                <p className="text-sm text-[#1F2957]/70 mb-4">
+                  {filteredDemandes.length} annonce{filteredDemandes.length !== 1 ? "s" : ""} trouvée
+                  {filterDept ? ` • Dép. ${filterDept}` : ""}
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredDemandes.map((d) => {
                   const isExpanded = expandedAnnonceId === d.id;
@@ -533,6 +560,12 @@ export default function AdminPage() {
                         </div>
                         <p className="text-sm text-[#1F2957]/80 mb-1">
                           <span className="font-medium">Ville :</span> {d.ville ?? "—"}
+                        </p>
+                        <p className="text-sm text-[#1F2957]/80 mb-1">
+                          <span className="font-medium">Départements :</span>{" "}
+                          {formatDepartementsLabel(
+                            resolveDepartementsForRow(d.departements, { fallbackVille: d.ville })
+                          )}
                         </p>
                         <p className="text-sm text-[#1F2957]/80 mb-1">
                           <span className="font-medium">Contact :</span> {d.nom_contact ?? "—"}
@@ -629,8 +662,9 @@ export default function AdminPage() {
               const budgetMoyen = tarifs.length > 0 ? tarifs.reduce((a, b) => a + b, 0) / tarifs.length : null;
               const deptCount: Record<string, number> = {};
               coachs.forEach((c) => {
-                const parts = (c.ville ?? "").split(",").map((p) => p.trim()).filter(Boolean);
-                parts.forEach((p) => { deptCount[p] = (deptCount[p] ?? 0) + 1; });
+                resolveDepartementsForRow(c.departements).forEach((p) => {
+                  deptCount[p] = (deptCount[p] ?? 0) + 1;
+                });
               });
               const top5Depts = Object.entries(deptCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
               const specCount: Record<string, number> = {};
@@ -810,13 +844,20 @@ export default function AdminPage() {
                                 onClick={async () => {
                                   if (!window.confirm("Supprimer ce devis ?")) return;
                                   setUpdatingId(dv.id);
-                                  const { error: deleteError } = await supabase
+                                  const { data: deletedRows, error: deleteError } = await supabase
                                     .from("suivi_devis")
                                     .delete()
-                                    .eq("id", dv.id);
+                                    .eq("id", dv.id)
+                                    .select("id");
                                   if (deleteError) {
                                     console.error("Delete suivi_devis error:", deleteError, { id: dv.id });
                                     alert("Impossible de supprimer ce devis.");
+                                    setUpdatingId(null);
+                                    return;
+                                  }
+                                  if (!deletedRows || deletedRows.length === 0) {
+                                    console.error("Delete suivi_devis: aucune ligne supprimée (RLS ?)", { id: dv.id });
+                                    alert("Impossible de supprimer ce devis. Vérifiez les policies RLS sur suivi_devis.");
                                     setUpdatingId(null);
                                     return;
                                   }

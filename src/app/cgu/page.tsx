@@ -72,8 +72,8 @@ export default function CGUPage() {
             Coach autorise également Coach-Nection à utiliser sa photo de profil à des fins de
             promotion de la plateforme (réseaux sociaux, site web), sauf refus explicite formulé par
             écrit à{" "}
-            <a href="mailto:contact.coach.nection@gmail.com" className={linkClass}>
-              contact.coach.nection@gmail.com
+            <a href="mailto:contact@lockin-web.online" className={linkClass}>
+              contact@lockin-web.online
             </a>
             .
           </p>
