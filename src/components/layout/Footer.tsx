@@ -28,7 +28,7 @@ export default function Footer() {
         </div>
 
         <div className="text-gray-400 text-center">
-          <p>contact@lockin-web.online</p>
+          <p>contact@lockin-web.com</p>
           <p className="flex items-center justify-center gap-2 mt-1">
             <a
               href="https://wa.me/33662288656"
